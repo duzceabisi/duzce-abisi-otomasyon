@@ -25,7 +25,7 @@ UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Accept-Language": "tr-TR,tr;q=0.9,en;q=0.8"}
 EN_ESKI = timedelta(hours=6)       # bundan eski haberler yeni sayılmaz
-SAKLA = timedelta(days=3)          # durum dosyasında bu kadar geriye bakılır
+SAKLA = timedelta(days=14)         # gönderilmiş bağlantı ve başlıklar bu kadar hatırlanır; sayfada yeniden beliren eski haber tekrar gitmesin
 BENZERLIK = 0.6                    # bu orandan fazla ortak kelime = aynı haber
 
 KAYNAKLAR = [
@@ -54,6 +54,7 @@ HTML_KAYNAKLAR = [
     ("Düzce Manşet", "https://duzcemanset.com.tr/",
      r'<a href="(https://duzcemanset\.com\.tr/[a-z0-9-]+-\d+)">\s*<img[^>]*alt="([^"]+)"', ""),
 ]
+HABER_DEGIL = re.compile(r"ihale|alım işi|yapım işi|satış ilanı|kiralama ilanı", re.I)  # ilanlar haber değil
 DOLGU = {"ve", "ile", "de", "da", "bir", "bu", "için", "olan", "oldu", "düzce", "düzcede", "düzceli", "sonra", "son", "dakika"}
 
 
@@ -139,6 +140,9 @@ def main():
             ilk_kez = site not in durum["siteler"]  # ilk okunuşta yalnızca kaydet, gönderme
             for h in haberler:
                 if h["link"] in durum["linkler"]:
+                    continue
+                if HABER_DEGIL.search(h["baslik"].replace("İ", "i").replace("I", "ı")):
+                    durum["linkler"][h["link"]] = simdi.strftime("%Y-%m-%d %H:%M")
                     continue
                 durum["linkler"][h["link"]] = simdi.strftime("%Y-%m-%d %H:%M")
                 if ilk_kez or (h["zaman"] and simdi - h["zaman"] > EN_ESKI):

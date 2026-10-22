@@ -1,4 +1,4 @@
-# Düzce haber sitelerini 10 dakikada bir tarar, yeni haberleri Telegram'a gönderir.
+# Düzce haber sitelerini ve iş ilanlarını 10 dakikada bir tarar, yenilerini Telegram'a gönderir.
 name: Haber takibi
 
 on:
@@ -30,7 +30,9 @@ jobs:
           TZ: Europe/Istanbul
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python haber_takip.py
+        run: |
+          python haber_takip.py || echo "::error::haber_takip başarısız"
+          python is_ilanlari.py || echo "::error::is_ilanlari başarısız"
       - name: Hafızayı kaydet
         if: always()
         uses: actions/cache/save@v4
