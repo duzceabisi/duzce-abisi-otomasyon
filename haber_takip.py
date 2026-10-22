@@ -159,6 +159,17 @@ def telegram_foto_url(url, metin):
                     raise
 
 
+def telegram_album_url(urller, metin):
+    """İnternetteki görselleri (ör. BİM afişleri) tek albüm olarak gönderir; açıklama ilk görselde."""
+    token = ayar("TELEGRAM_BOT_TOKEN")
+    medya = [{"type": "photo", "media": u} for u in urller[:10]]
+    medya[0].update({"caption": metin, "parse_mode": "HTML"})
+    for chat in ayar("TELEGRAM_CHAT_ID").split(","):
+        veri = json.dumps({"chat_id": chat.strip(), "media": medya}).encode()
+        urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMediaGroup", data=veri,
+                               headers={"Content-Type": "application/json"}), timeout=90).read()
+
+
 def gonder_haber(g, simdi):
     """Kategoriye göre etiketli mesaj; önemli haberler tasarım kartıyla gider."""
     ilk = g["haberler"][0]

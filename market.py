@@ -2,9 +2,9 @@
 """Market kampanyaları: BİM aktüel/indirim, ŞOK haftalık afişleri, A101 aktüel haberleri.
 
 zamanli.py her gün 10:00'da market_kampanyalari() çağırır; her kampanya bir kez gönderilir.
-  BİM   bim.com.tr          O gün başlayan aktüel ürünler + o gün başlayan haftalık indirim (tasarımlı sayfa)
+  BİM   bim.com.tr          O gün başlayan aktüel ve haftalık indirim dönemlerinin resmi afişleri (albüm)
   ŞOK   kurumsal.sokmarket  Resmi "Haftanın Fırsatları" / "Hafta Sonu" afişi (afişin kendisi)
-  A101  Google Haberler     a101.com.tr sunucuyu engelliyor; "A101 aktüel" haberinin başlığı ve bağlantısı
+  A101  (kapalı)            a101.com.tr sunucuyu engelliyor, afişler tarayıcıda yükleniyor; görsel alınamıyor
 """
 import html, json, re, urllib.parse, urllib.request
 from datetime import datetime, timedelta
@@ -59,6 +59,28 @@ def bim_urunler(anahtar):
     return urunler
 
 
+BIM_AFIS = "https://www.bim.com.tr/Categories/680/afisler.aspx"
+
+
+def bim_afisler(simdi):
+    """Bugün başlayan BİM dönemlerinin resmi afişleri: [(etiket, anahtar, [tam boy afiş adresleri])]."""
+    s = getir(BIM_AFIS)
+    bloklar = re.split(r"(?=<div[^>]*afis='\d+')", s)
+    gun, ay = simdi.day, AYLAR[simdi.month - 1]
+    out = []
+    for b in bloklar[1:]:
+        anahtar = re.search(r"afis='(\d+)'", b).group(1)
+        etiket = re.search(r'class="subTabArea[^"]*">\s*<span class="text">([^<]+)</span>', b)
+        etiket = temiz(etiket.group(1)) if etiket else ""
+        bugun_basliyor = etiket.startswith(f"{gun} {ay} ") or re.match(rf"^{gun}\s*-\s*\d+ {ay}$", etiket)
+        if not bugun_basliyor:
+            continue
+        afisler = list(dict.fromkeys(re.findall(r'class="download" href="(https://cdn\d?\.bim\.com\.tr/uploads/afisler/[^"]+)"', b)))
+        if afisler:
+            out.append((etiket, anahtar, afisler))
+    return out
+
+
 def bugun_bim(simdi):
     """Bugün başlayan BİM sekmeleri: aktüel ('23 Ekim Cuma') ve haftalık indirim ('23-29 Ekim')."""
     gun = f"{simdi.day} {AYLAR[simdi.month - 1]}"
@@ -84,7 +106,7 @@ def a101_haberleri():
             yield {"baslik": baslik, "link": html.unescape(link)}
 
 
-def market_kampanyalari(simdi, paylas, telegram, telegram_foto_url):
+def market_kampanyalari(simdi, paylas, telegram, telegram_foto_url, telegram_album_url):
     """Yeni kampanyaları gönderir. paylas(ad, sayfalar, aciklama, simdi) zamanli.py'den gelir."""
     durum = json.loads(DURUM.read_text(encoding="utf-8")) if DURUM.exists() else {"gonderilen": {}}
     g = durum["gonderilen"]
@@ -92,22 +114,13 @@ def market_kampanyalari(simdi, paylas, telegram, telegram_foto_url):
     say = 0
 
     try:
-        for ad, anahtar, tur in bugun_bim(simdi):
-            if f"bim:{anahtar}" in g:
+        for etiket, anahtar, afisler in bim_afisler(simdi):
+            if f"bimafis:{anahtar}" in g:
                 continue
-            urunler = bim_urunler(anahtar)
-            if not urunler:
-                continue
-            satir = [[u["fiyat"], " ".join(x for x in [u["marka"], tr_baslik(u["ad"])] if x)
-                      + (f"  ({u['eski']} yerine, {u['indirim']} indirim)" if tur == "indirim" and u["indirim"] else "")]
-                     for u in urunler[:24]]
-            baslik = "BİM'de bugün aktüel" if tur == "aktuel" else "BİM haftalık indirim"
-            sayfalar = [{"ad": f"bim-{n // 8 + 1}", "etiket": f"🛒 BİM · {ad}", "baslik": baslik, "satirlar": satir[n:n + 8], "boy": 64}
-                        for n in range(0, len(satir), 8)]
-            aciklama = (f"🛒 {baslik}! {ad}\n\n" + "\n".join(f"• {tr_baslik(u['ad'])} — {u['fiyat']}" for u in urunler[:15])
-                        + ("\n…" if len(urunler) > 15 else "") + "\n\nStoklarla sınırlıdır.\nKaynak: bim.com.tr\n\n#düzce #bim #aktüel #indirim #düzceabisi")
-            paylas(f"bim-{anahtar}", sayfalar, aciklama[:1024], simdi)
-            g[f"bim:{anahtar}"] = bugun
+            tur = "haftalık indirim" if "-" in etiket else "aktüel ürünler"
+            telegram_album_url(afisler[:10], f"🛒 <b>BİM {tur} — {html.escape(etiket)}</b>\n\nStoklarla sınırlıdır.\n"
+                                             f"Kaynak: BİM (resmi afiş)\n\n#düzce #bim #aktüel #indirim #düzceabisi")
+            g[f"bimafis:{anahtar}"] = bugun
             say += 1
     except Exception as hata:
         print("BİM hatası:", hata)
@@ -122,15 +135,7 @@ def market_kampanyalari(simdi, paylas, telegram, telegram_foto_url):
     except Exception as hata:
         print("ŞOK hatası:", hata)
 
-    try:
-        for a in list(a101_haberleri())[:2]:
-            if f"a101:{a['baslik']}" in g:
-                continue
-            telegram(f"🛒 <b>A101 aktüel</b>\n{html.escape(a['baslik'])}\n📰 <a href=\"{html.escape(a['link'])}\">Haberi oku</a>")
-            g[f"a101:{a['baslik']}"] = bugun
-            say += 1
-    except Exception as hata:
-        print("A101 hatası:", hata)
+    # A101: afiş görseli sunucudan güvenilir şekilde alınamıyor; görselsiz bildirim istenmediği için kapalı.
 
     sinir = (simdi - timedelta(days=21)).strftime("%Y-%m-%d")
     durum["gonderilen"] = {k: v for k, v in g.items() if v >= sinir}
