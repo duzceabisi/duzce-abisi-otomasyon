@@ -16,7 +16,8 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from gonder import ayar
+from gonder import ayar, cok_parcali
+from kategori import sinifla
 
 KOK = Path(__file__).resolve().parent
 DURUM = KOK / "durum" / "gorulen.json"
@@ -121,6 +122,36 @@ def telegram(metin):
         urllib.request.urlopen(istek, timeout=20).read()
 
 
+def telegram_foto(png, metin):
+    token = ayar("TELEGRAM_BOT_TOKEN")
+    for chat in ayar("TELEGRAM_CHAT_ID").split(","):
+        govde, tur = cok_parcali({"chat_id": chat.strip(), "caption": metin, "parse_mode": "HTML"}, {"photo": Path(png)})
+        istek = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendPhoto", data=govde,
+                                       headers={"Content-Type": tur})
+        urllib.request.urlopen(istek, timeout=60).read()
+
+
+def gonder_haber(g, simdi):
+    """Kategoriye göre etiketli mesaj; önemli haberler tasarım kartıyla gider."""
+    ilk = g["haberler"][0]
+    saat = ilk["zaman"].strftime("%H.%M") if ilk["zaman"] else simdi.strftime("%H.%M")
+    sinif = sinifla(ilk["baslik"])
+    ust = sinif["etiket"] + ("  ·  🔴 ÖNEMLİ" if sinif["onemli"] else "")
+    kaynaklar = "\n".join(f'📰 <a href="{html.escape(h["link"])}">{html.escape(h["site"])}</a>' for h in g["haberler"])
+    metin = f"{ust}\n<b>{html.escape(ilk['baslik'])}</b>\n🕒 {saat}\n{kaynaklar}"
+    if sinif["onemli"]:
+        try:
+            from haber_kart import KATEGORI, ciz_kart
+            png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": ilk["baslik"],
+                            "saat": saat, "kaynak": ", ".join(dict.fromkeys(h["site"] for h in g["haberler"]))},
+                           KOK / "cikti" / "kartlar" / "son.png")
+            telegram_foto(png, metin)
+            return
+        except Exception as hata:  # kart çizilemezse haber metin olarak yine gitsin
+            print("kart çizilemedi:", hata, file=sys.stderr)
+    telegram(metin)
+
+
 def main():
     simdi = datetime.now(TZ)
     ilk_calisma = not DURUM.exists()
@@ -171,11 +202,8 @@ def main():
                  f"Bundan sonra çıkan her yeni haber buraya gelecek.")
     else:
         for g in gruplar:
-            ilk = g["haberler"][0]
-            saat = ilk["zaman"].strftime("%H.%M") if ilk["zaman"] else simdi.strftime("%H.%M")
-            kaynaklar = "\n".join(f'📰 <a href="{html.escape(h["link"])}">{html.escape(h["site"])}</a>' for h in g["haberler"])
-            telegram(f"🚨 <b>{html.escape(ilk['baslik'])}</b>\n🕒 {saat}\n{kaynaklar}")
-            print("gönderildi:", ilk["baslik"])
+            gonder_haber(g, simdi)
+            print("gönderildi:", g["haberler"][0]["baslik"])
 
     for g in gruplar:
         durum["basliklar"].append([" ".join(sorted(g["kelimeler"])), simdi.strftime("%Y-%m-%d %H:%M")])

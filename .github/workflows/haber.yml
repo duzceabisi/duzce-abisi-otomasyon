@@ -13,12 +13,14 @@ concurrency:
 jobs:
   tara:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Emoji yazı tipi (önemli haber kartları için)
+        run: sudo apt-get install -y -qq fonts-noto-color-emoji >/dev/null 2>&1 || true
       - name: Önceki taramanın hafızasını getir
         uses: actions/cache/restore@v4
         with:

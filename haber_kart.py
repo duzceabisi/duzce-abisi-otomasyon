@@ -26,6 +26,11 @@ KATEGORI = {
     "duyuru": ("DUYURU", "📢", "#0E3B2E", "#06201A"),
     "hava": ("HAVA UYARISI", "⛈️", "#3A6E8F", "#183447"),
     "genel": ("SON DAKİKA", "📰", "#0E3B2E", "#06201A"),
+    "deprem": ("DEPREM", "🌍", "#8A3FD1", "#3B1460"),
+    "okul": ("OKUL TATİLİ", "🏫", "#1F8A70", "#0B3B30"),
+    "kayip": ("KAYIP", "🔎", "#C9A227", "#5A4708"),
+    "kesinti": ("KESİNTİ", "⚡", "#E3B02D", "#5C4508"),
+    "olum": ("ACI HABER", "🖤", "#4A4F4C", "#1C1F1D"),
 }
 
 CSS = """
