@@ -39,7 +39,11 @@ KAYNAKLAR = [
     ("Haber Düzce", "https://www.haberduzce.com/rss.xml"),
     # bazı yerel siteler yurt dışı sunucuları engelliyor; Google Haberler onların bir kısmını ve ajansları kapsıyor
     ("Google Haberler", "https://news.google.com/rss/search?q=D%C3%BCzce+when:1d&hl=tr&gl=TR&ceid=TR:tr"),
-]
+    # Cloudflare bot korumalı siteler: sunucudan doğrudan açılmıyor, Google Haberler'deki siteye özel aramadan alınır
+] + [(f"Google: {ad}", f"https://news.google.com/rss/search?q=site:{alan}+when:1d&hl=tr&gl=TR&ceid=TR:tr")
+     for ad, alan in [("Düzce Postası", "duzcepostasi.com"), ("Düzce Parantez", "duzceparantez.com"),
+                      ("Oxijen TV", "oxijen.tv"), ("Düzce'nin Sesi", "duzceninsesi.com.tr"),
+                      ("Düzce Damla", "duzcedamla.com")]]
 DOLGU = {"ve", "ile", "de", "da", "bir", "bu", "için", "olan", "oldu", "düzce", "düzcede", "düzceli", "sonra", "son", "dakika"}
 
 
@@ -67,7 +71,13 @@ def oku(site, url):
         baslik = html.unescape((it.findtext("title") or "").strip())
         kaynak = it.findtext("source")  # yalnızca Google Haberler'de dolu
         if kaynak:
-            baslik = baslik.removesuffix(" - " + kaynak).strip()
+            while True:  # sondaki " - Düzce Parantez Gazete(si)" gibi site adlarını sök
+                bas, _, kuyruk = baslik.rpartition(" - ")
+                if not (bas and kuyruk.split()[:1] and kuyruk.split()[0].lower() in kaynak.lower()):
+                    break
+                baslik = bas.strip()
+            if len(baslik.split()) < 4 or baslik.lower().endswith("haberleri"):  # kategori sayfası, haber değil
+                continue
         link = (it.findtext("link") or "").strip()
         tarih = it.findtext("pubDate")
         try:
