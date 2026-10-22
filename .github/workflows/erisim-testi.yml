@@ -6,7 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - run: |
+      - shell: bash {0}
+        run: |
           UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
           for u in \
             "https://esube.iskur.gov.tr/Istihdam/AcikIsIlanAra.aspx?mid=2965&il=81" \
@@ -22,5 +23,5 @@ jobs:
             "http://www.duzce.gov.tr/duyurular" \
             "https://www.duzce.bel.tr/etkinlikler" \
             "https://www.duzce.edu.tr/" ; do
-            c=$(curl -s -L -A "$UA" --max-time 25 -o /tmp/p -w "%{http_code}" "$u"); echo "SONUC $c $(wc -c </tmp/p) $u"
+            c=$(curl -s -L -A "$UA" --max-time 25 -o /tmp/p -w "%{http_code}" "$u" || true); echo "SONUC $c $(wc -c </tmp/p) $u"
           done
