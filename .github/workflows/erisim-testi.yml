@@ -1,0 +1,14 @@
+# Geçici erişim testi. Test bitince silinecek.
+name: Erisim testi
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - shell: bash {0}
+        run: |
+          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+          for u in "http://www.koeri.boun.edu.tr/scripts/lst0.asp" "https://namazvakitleri.diyanet.gov.tr/tr-TR/9378/duzce-icin-namaz-vakti" "https://tr.wikipedia.org/wiki/23_Ekim" "https://www.duzcetb.org.tr" "https://www.bim.com.tr/Categories/680/aktuel-urunler.aspx" "https://www.a101.com.tr/aldin-aldin" "https://www.sokmarket.com.tr/haftanin-firsatlari-market" "https://www.akakce.com" ; do
+            c=$(curl -s -L -A "$UA" --max-time 25 -o /tmp/p -w "%{http_code}" "$u" || true); echo "SONUC $c $(wc -c </tmp/p) $u"
+          done
