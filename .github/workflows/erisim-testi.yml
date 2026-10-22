@@ -1,23 +1,30 @@
 # Geçici: engellenen sitelere sunucudan hangi yolla ulaşılabildiğini dener. Test bitince silinecek.
 name: Erisim testi
 on: workflow_dispatch
+env:
+  UA: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+  URLS: "https://www.duzcepostasi.com/rss https://www.duzceparantez.com/rss https://www.oxijen.tv/rss https://www.duzceninsesi.com.tr/rss https://www.duzcedamla.com/rss"
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
-      - run: |
-          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
-          URLS="https://www.duzcepostasi.com/rss https://www.duzceparantez.com/rss https://www.oxijen.tv/rss https://www.duzceninsesi.com.tr/rss https://www.eczaneler.gen.tr/nobetci-duzce"
-          t(){ for u in $URLS; do c=$(curl -s -L -A "$UA" --max-time 25 "$@" -o /tmp/p -w "%{http_code}" "$u"); echo "SONUC $YOL $c $(wc -c </tmp/p) $u"; done; }
-          YOL=dogrudan t
-          # Tor
-          sudo apt-get install -y -qq tor >/dev/null 2>&1; sudo systemctl start tor; sleep 20
-          YOL=tor t --socks5-hostname 127.0.0.1:9050
-          # okuyucu aracı
-          for u in $URLS; do c=$(curl -s --max-time 30 -o /tmp/p -w "%{http_code}" "https://r.jina.ai/$u"); echo "SONUC jina $c $(wc -c </tmp/p) $u $(head -c 120 /tmp/p | tr '\n' ' ')"; done
-          # Cloudflare WARP
+      - name: Okuyucu aracı
+        timeout-minutes: 3
+        continue-on-error: true
+        run: for u in $URLS; do c=$(curl -s --max-time 30 -o /tmp/p -w "%{http_code}" "https://r.jina.ai/$u"); echo "SONUC jina $c $(wc -c </tmp/p) $u"; done
+      - name: Tor
+        timeout-minutes: 4
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -qq tor >/dev/null 2>&1; sudo systemctl start tor; sleep 25
+          for u in $URLS; do c=$(curl -s -L -A "$UA" --max-time 25 --socks5-hostname 127.0.0.1:9050 -o /tmp/p -w "%{http_code}" "$u"); echo "SONUC tor $c $(wc -c </tmp/p) $u"; done
+      - name: Cloudflare WARP
+        timeout-minutes: 4
+        continue-on-error: true
+        run: |
           curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list >/dev/null
           sudo apt-get update -qq >/dev/null && sudo apt-get install -y -qq cloudflare-warp >/dev/null 2>&1
-          warp-cli --accept-tos registration new && warp-cli --accept-tos mode proxy && warp-cli --accept-tos connect; sleep 8; warp-cli --accept-tos status | head -2
-          YOL=warp t --socks5-hostname 127.0.0.1:40000
+          yes | timeout 30 warp-cli --accept-tos registration new; timeout 15 warp-cli --accept-tos mode proxy; timeout 15 warp-cli --accept-tos connect; sleep 8
+          for u in $URLS; do c=$(curl -s -L -A "$UA" --max-time 25 --socks5-hostname 127.0.0.1:40000 -o /tmp/p -w "%{http_code}" "$u"); echo "SONUC warp $c $(wc -c </tmp/p) $u"; done
