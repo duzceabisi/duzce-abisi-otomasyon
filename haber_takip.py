@@ -98,7 +98,10 @@ def oku(site, url):
         except (TypeError, ValueError):
             zaman = None
         if baslik and link and "/makale/" not in link:  # köşe yazıları haber değil
-            yield {"site": kaynak or site, "baslik": baslik, "link": link, "zaman": zaman}
+            aciklama = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html.unescape(it.findtext("description") or ""))).strip()
+            if aciklama.startswith(baslik[:30]):  # Google Haberler açıklaması çoğu zaman başlığın tekrarı
+                aciklama = ""
+            yield {"site": kaynak or site, "baslik": baslik, "link": link, "zaman": zaman, "aciklama": aciklama[:600]}
 
 
 def oku_html(site, url, desen, on_ek):
@@ -177,15 +180,22 @@ def gonder_haber(g, simdi):
     sinif = sinifla(ilk["baslik"])
     ust = sinif["etiket"] + ("  ·  🔴 ÖNEMLİ" if sinif["onemli"] else "")
     kaynaklar = "\n".join(f'📰 <a href="{html.escape(h["link"])}">{html.escape(h["site"])}</a>' for h in g["haberler"])
-    ozet = g.get("ozet", "")
-    metin = f"{ust}\n<b>{html.escape(ilk['baslik'])}</b>\n" + (f"{html.escape(ozet)}\n" if ozet else "") + f"🕒 {saat}\n{kaynaklar}"
+    ozet, baslik, yer = g.get("ozet", ""), ilk["baslik"], ""
+    if sinif["onemli"] and not ozet:  # önemli haberler yapay zekâyla kendi cümlelerimizle (ücretsiz Gemini)
+        from ai import ozetle
+        y = ozetle(ilk["baslik"], next((h.get("aciklama") for h in g["haberler"] if h.get("aciklama")), ""))
+        if y:
+            baslik, ozet, yer = y["baslik"], y["ozet"], y["yer"]
+    metin = (f"{ust}\n<b>{html.escape(baslik)}</b>\n" + (f"{html.escape(ozet)}\n" if ozet else "") + f"🕒 {saat}"
+             + (f" · 📍 {html.escape(yer)}" if yer else "") + f"\n{kaynaklar}"
+             + (f"\n<i>Kaynak başlığı: {html.escape(ilk['baslik'])}</i>" if baslik != ilk["baslik"] else ""))
     gunluk_kaydet(GUNLUK, {"baslik": ilk["baslik"], "kod": sinif["kod"], "etiket": sinif["etiket"], "onemli": sinif["onemli"],
                            "siteler": list(dict.fromkeys(h["site"] for h in g["haberler"])), "link": ilk["link"], "saat": saat}, simdi)
     if sinif["onemli"]:
         try:
             from haber_kart import KATEGORI, ciz_kart
-            png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": ilk["baslik"],
-                            "ozet": ozet, "saat": saat},
+            png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": baslik,
+                            "ozet": ozet, "yer": yer, "saat": saat},
                            KOK / "cikti" / "kartlar" / "son.png")
             telegram_foto(png, metin)
             return

@@ -87,7 +87,10 @@ def ozet(simdi):
     sayfalar = [{"ad": f"ozet-{n + 1}", "etiket": "📰 Günün özeti", "baslik": f"Düzce'de bugün ({simdi.day} {AYLAR[simdi.month - 1]})",
                  "satirlar": p, "boy": 56} for n, p in enumerate(parcala(satir, 5))]
     kaynak = ", ".join(sorted({s for h in sirali for s in h["siteler"]}))
+    from ai import gunun_ozeti
+    giris = gunun_ozeti([h["baslik"] for h in sirali])
     return sayfalar, (f"📰 Düzce'de bugün neler oldu? {simdi.day} {AYLAR[simdi.month - 1]} {GUNLER[simdi.weekday()]}\n\n"
+                      + (f"{giris}\n\n" if giris else "")
                       + "\n".join(f"• {h['baslik']}" for h in sirali) + f"\n\nKaynaklar: {kaynak}\n\n{ETIKET} #düzcegündem")
 
 

@@ -37,6 +37,7 @@ jobs:
           TZ: Europe/Istanbul
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python haber_takip.py || echo "::error::haber_takip başarısız"
           python is_ilanlari.py || echo "::error::is_ilanlari başarısız"

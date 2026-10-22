@@ -28,7 +28,7 @@ KATEGORILER = [
     ("findik", "🌰 FINDIK FİYATI", True, ["fındık fiyat", "fındık alım fiyat", "fındığın kilosu", "tmo fındık"]),
     ("firsat", "⭐ FIRSAT", True, ["ücretsiz", "bedava", "indirim", "kampanya", "dağıtılacak", "dağıtılıyor", "hibe",
                                  "başvuru", "kayıtlar", "kayıtları", "kayıt başladı", "kayıt yaptır",
-                                 "ücretsiz kurs", "burs", "destek ödemesi", "hak sahibi", "kura", "personel alım", "işçi alım"]),
+                                 "ücretsiz kurs", "burs", "destek ödemesi", "hak sahibi", "kura çekim", "~\\bkurası\\b", "personel alım", "işçi alım"]),
     ("kayip", "🔎 KAYIP", True, ["kayıp", "kayboldu", "aranıyor", "haber alınamıyor", "kaybolan"]),
     ("kesinti", "⚡ KESİNTİ", True, ["elektrik kesinti", "su kesinti", "sular kesil", "elektrikler kesil", "kesinti",
                                     "doğalgaz kesinti", "arıza nedeniyle"]),
