@@ -1,0 +1,39 @@
+# Düzce haber sitelerini 10 dakikada bir tarar, yeni haberleri Telegram'a gönderir.
+name: Haber takibi
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: haber-takip      # iki tarama aynı anda çalışıp aynı haberi iki kez göndermesin
+  cancel-in-progress: false
+
+jobs:
+  tara:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Önceki taramanın hafızasını getir
+        uses: actions/cache/restore@v4
+        with:
+          path: durum
+          key: haber-durum-${{ github.run_id }}
+          restore-keys: haber-durum-
+      - name: Tara ve gönder
+        env:
+          TZ: Europe/Istanbul
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python haber_takip.py
+      - name: Hafızayı kaydet
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: durum
+          key: haber-durum-${{ github.run_id }}
