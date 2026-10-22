@@ -1,0 +1,26 @@
+# Geçici: iş ilanı / etkinlik / duyuru kaynaklarına sunucudan erişimi dener. Test bitince silinecek.
+name: Erisim testi
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - run: |
+          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+          for u in \
+            "https://esube.iskur.gov.tr/Istihdam/AcikIsIlanAra.aspx?mid=2965&il=81" \
+            "https://www.kariyer.net/is-ilanlari/duzce" \
+            "https://www.eleman.net/is-ilanlari/duzce" \
+            "https://isinolsun.com/is-ilanlari/duzce" \
+            "https://www.ilan.gov.tr/ilan/kategori/9/personel-alimlari?il=81" \
+            "https://biletinial.com/SehrineOzel/duzce" \
+            "https://www.bubilet.com.tr/duzce" \
+            "https://biletino.com/tr/city/duzce/" \
+            "https://www.biletimgo.com/sehir-etkinlikleri/duzce" \
+            "https://duzce.ktb.gov.tr/TR-70713/festival-ve-senlikler.html" \
+            "http://www.duzce.gov.tr/duyurular" \
+            "https://www.duzce.bel.tr/etkinlikler" \
+            "https://www.duzce.edu.tr/" ; do
+            c=$(curl -s -L -A "$UA" --max-time 25 -o /tmp/p -w "%{http_code}" "$u"); echo "SONUC $c $(wc -c </tmp/p) $u"
+          done
