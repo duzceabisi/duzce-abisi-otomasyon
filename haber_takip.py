@@ -144,6 +144,21 @@ def gunluk_kaydet(dosya, kayit, simdi, sakla_gun=8):
     dosya.write_text(json.dumps(veri, ensure_ascii=False), encoding="utf-8")
 
 
+def telegram_foto_url(url, metin):
+    """İnternetteki bir görseli (ör. marketin resmi afişi) Telegram'a gönderir; olmazsa dosya olarak gönderir."""
+    token = ayar("TELEGRAM_BOT_TOKEN")
+    for chat in ayar("TELEGRAM_CHAT_ID").split(","):
+        for yontem, alan in (("sendPhoto", "photo"), ("sendDocument", "document")):
+            veri = json.dumps({"chat_id": chat.strip(), alan: url, "caption": metin, "parse_mode": "HTML"}).encode()
+            try:
+                urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{token}/{yontem}", data=veri,
+                                       headers={"Content-Type": "application/json"}), timeout=60).read()
+                break
+            except Exception:
+                if yontem == "sendDocument":
+                    raise
+
+
 def gonder_haber(g, simdi):
     """Kategoriye göre etiketli mesaj; önemli haberler tasarım kartıyla gider."""
     ilk = g["haberler"][0]

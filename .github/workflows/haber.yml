@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       gorev:
-        description: "Boş = normal tarama. Ya da hemen çalıştır: burc | tarihte | is_ozet | ozet | etkinlik_hafta | hafta_sonu"
+        description: "Boş = normal tarama. Ya da hemen çalıştır: burc | market | tarihte | is_ozet | ozet | etkinlik_hafta | hafta_sonu"
         required: false
         default: ""
 

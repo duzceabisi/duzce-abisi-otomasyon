@@ -5,6 +5,7 @@ Her görev günde bir kez, saati geldikten sonraki ilk taramada çalışır; 3 s
 fazla geciktiyse o gün atlanır (örneğin sunucu saatlerce durduysa eski içerik gitmesin).
 
   08:00  burc       Günlük burç yorumları
+  10:00  market     BİM aktüel/indirim, ŞOK afişleri, A101 aktüel (yeni olanlar)
   12:00  tarihte    Tarihte bugün ve özel günler
   13:00  is_ozet    Son 24 saatte açılan iş ilanları
   19:30  ozet       Günün öne çıkan haberleri
@@ -109,9 +110,18 @@ def hafta_sonu(simdi):
     return _etkinlik(simdi, "Hafta sonu Düzce'de", "🎉 Hafta sonu Düzce'de ne var?")
 
 
+def market(simdi):
+    """BİM/ŞOK/A101 kampanyaları kendi içinde gönderilir (bkz. market.py); burada sayfa döndürülmez."""
+    from haber_takip import telegram, telegram_foto_url
+    from market import market_kampanyalari
+    print("market kampanyası:", market_kampanyalari(simdi, paylas, telegram, telegram_foto_url))
+    return None
+
+
 # (görev, saat, dakika, haftanın günleri: None = her gün, 0 = Pazartesi)
 GOREVLER = [
     ("burc", 8, 0, None, burc),
+    ("market", 10, 0, None, market),
     ("tarihte", 12, 0, None, tarihte),
     ("is_ozet", 13, 0, None, is_ozet),
     ("ozet", 19, 30, None, ozet),
