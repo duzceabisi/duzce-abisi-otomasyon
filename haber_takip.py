@@ -21,7 +21,9 @@ from gonder import ayar
 KOK = Path(__file__).resolve().parent
 DURUM = KOK / "durum" / "gorulen.json"
 TZ = ZoneInfo("Europe/Istanbul")
-UA = {"User-Agent": "Mozilla/5.0 (DuzceAbisi haber takip)"}
+UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "tr-TR,tr;q=0.9,en;q=0.8"}
 EN_ESKI = timedelta(hours=6)       # bundan eski haberler yeni sayılmaz
 SAKLA = timedelta(days=3)          # durum dosyasında bu kadar geriye bakılır
 BENZERLIK = 0.6                    # bu orandan fazla ortak kelime = aynı haber
