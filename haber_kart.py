@@ -2,8 +2,9 @@
 """Tek bir haber için Düzce Abisi tasarımlı Instagram kartı (1080x1350) üretir.
 
 Kullanım:  python3 haber_kart.py kart.json [cikti.png]
-kart.json: {"kategori": "yangin|kaza|asayis|duyuru|hava|genel", "baslik": "...",
-            "ozet": "...", "yer": "Şıralık Mahallesi", "saat": "01.09", "kaynak": "Düzce Hür Haber"}
+kart.json: {"kategori": "yangin|kaza|asayis|duyuru|hava|genel|...", "baslik": "...",
+            "ozet": "...", "yer": "Şıralık Mahallesi", "saat": "01.09"}
+Kaynak görselde yazmaz; Telegram mesajında metin olarak verilir.
 
 Haber sitelerinin fotoğrafları kullanılmaz (telif); kart, kategori rengi ve simgesiyle tasarlanır.
 """
@@ -31,6 +32,8 @@ KATEGORI = {
     "kayip": ("KAYIP", "🔎", "#C9A227", "#5A4708"),
     "kesinti": ("KESİNTİ", "⚡", "#E3B02D", "#5C4508"),
     "olum": ("ACI HABER", "🖤", "#4A4F4C", "#1C1F1D"),
+    "firsat": ("FIRSAT", "⭐", "#1F8A70", "#0B3B30"),
+    "findik": ("FINDIK FİYATI", "🌰", "#9A6324", "#3F2509"),
 }
 
 CSS = """
@@ -65,7 +68,7 @@ def kart_html(k):
 <body style="--ana:{ana};--koyu:{koyu};--boy:{boy}px"><div class="zemin"></div><div class="simge">{simge}</div>
 <div class="ust"><div class="marka">DÜZCE <span>ABİSİ</span></div><div class="saat">{simdi.day} {AYLAR[simdi.month - 1]} · {e(k.get("saat", simdi.strftime("%H.%M")))}</div></div>
 <div class="ic"><div class="etiket">{simge} {etiket}</div><h1>{e(k["baslik"])}</h1><p>{e(k.get("ozet", ""))}</p>{yer}</div>
-<div class="alt"><span>Kaynak: {e(k.get("kaynak", ""))}</span><span>Haberler için takip et → @duzceabisi</span></div></body></html>"""
+<div class="alt"><span>Düzce'nin haber ve hizmet sayfası</span><span>Takip et → @duzceabisi</span></div></body></html>"""
 
 
 def ciz_kart(k, png):

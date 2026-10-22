@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from haber_takip import UA, telegram
+from haber_takip import UA, gunluk_kaydet, telegram
 
 KOK = Path(__file__).resolve().parent
 DURUM = KOK / "durum" / "is_ilanlari.json"
@@ -102,6 +102,8 @@ def main():
         except Exception as hata:
             hatalar.append(f"{ad}: {hata}")
 
+    for i in yeni:  # 13:00 iş ilanları özeti için
+        gunluk_kaydet(KOK / "durum" / "gunluk_is.json", i, simdi)
     # Telegram mesajı 4096 karakterle sınırlı: 15'erli parçalar
     for bas in range(0, len(yeni), 15):
         parca = yeni[bas:bas + 15]

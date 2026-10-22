@@ -87,6 +87,14 @@ td.satis{font-family:'Archivo Black';color:var(--yesil)}
 .ilc .ead{text-align:left;font-weight:800;color:var(--murekkep)}
 .ilc .ead small{display:block;font-size:19px;font-weight:500;color:var(--gri);margin-top:2px}
 .ilc .etel{font-family:'Archivo Black';color:var(--kirmizi);white-space:nowrap;font-size:26px}
+.liste{list-style:none}
+.liste li{display:flex;gap:26px;padding:20px 0;border-top:2px solid #E6DECF;align-items:baseline}
+.liste b{font-family:'Archivo Black';font-size:32px;color:var(--findik);min-width:170px;flex-shrink:0}
+.liste span{font-size:30px;line-height:1.32;font-weight:500}
+.burcsayfa .liste li{padding:22px 0;flex-direction:column;gap:8px}.burcsayfa .liste b{font-size:40px}.burcsayfa .liste span{font-size:30px;line-height:1.4}
+.buyuk .liste li{padding:26px 0}.buyuk .liste b{font-size:48px;min-width:300px}.buyuk .liste span{font-family:'Archivo Black';font-size:56px;color:var(--yesil)}
+.koyu{background:var(--yesil);color:var(--krem)}.koyu h1,.koyu .etiket{color:var(--krem)}.koyu .liste li{border-color:rgba(245,239,227,.18)}
+.koyu .alt{color:rgba(245,239,227,.7)}
 .vefatsayfa{background:#ECE9E4}
 .vefatsayfa .ust{background:#2A2F2C}
 .vefat .kart{margin-bottom:18px;padding:26px 34px;border-left:8px solid #2A2F2C}
@@ -102,7 +110,7 @@ def e(s):
 
 
 def sayfa(govde, d, no, top, kaynak="", sinif=""):
-    sol = e("Kaynak: " + kaynak) if kaynak else "Düzce Abisi"
+    sol = "Düzce Abisi · @duzceabisi"  # kaynak görselde yazmaz, Telegram metninde yazılır
     return f"""<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{CSS}</style></head>
 <body class="{sinif}"><div class="ust"><div class="marka">DÜZCE <span>ABİSİ</span></div><div class="tarih">{e(d['tarih'])} · {e(d['gun'])}</div></div>
 {govde}<div class="alt"><span>{sol}</span><span>{no} / {top}</span></div></body></html>"""
@@ -163,6 +171,11 @@ def sayfalar(d):
      out.append(("eczane-ilceler", f"""<div class="ic ilc"><div class="etiket">Nöbetçi eczaneler · İlçeler</div>
 <h1 style="font-size:60px">Bu gece ilçelerde</h1><p class="not" style="margin:-10px 0 24px;font-size:28px">🌙 {e(ec['donem'])}</p>
 <div class="kart"><table>{sat}</table></div></div>""", ec.get("kaynak", ""), ""))
+    for sf in d.get("sayfalar") or []:
+        satir = "".join(f'<li><b>{e(b)}</b><span>{e(m)}</span></li>' for b, m in sf["satirlar"])
+        alt = f'<p class="not" style="margin:-10px 0 26px;font-size:30px">{e(sf["alt"])}</p>' if sf.get("alt") else ""
+        out.append((sf["ad"], f"""<div class="ic genel"><div class="etiket">{e(sf["etiket"])}</div>
+<h1 style="font-size:{sf.get("boy", 64)}px">{e(sf["baslik"])}</h1>{alt}<ul class="liste">{satir}</ul></div>""", "", sf.get("sinif", "")))
     vefat = d.get("vefat") or []
     for bas in range(0, len(vefat), 4):
         kartlar = "".join(

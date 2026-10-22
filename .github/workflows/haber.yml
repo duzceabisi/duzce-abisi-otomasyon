@@ -1,10 +1,15 @@
-# Düzce haber sitelerini ve iş ilanlarını 10 dakikada bir tarar, yenilerini Telegram'a gönderir.
+# 10 dakikada bir: haberler, iş ilanları, deprem; saati gelen zamanlı paylaşımlar (burç, tarihte bugün, özetler).
 name: Haber takibi
 
 on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
+    inputs:
+      gorev:
+        description: "Boş = normal tarama. Ya da hemen çalıştır: burc | tarihte | is_ozet | ozet | etkinlik_hafta | hafta_sonu"
+        required: false
+        default: ""
 
 concurrency:
   group: haber-takip      # iki tarama aynı anda çalışıp aynı haberi iki kez göndermesin
@@ -13,7 +18,7 @@ concurrency:
 jobs:
   tara:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -35,6 +40,8 @@ jobs:
         run: |
           python haber_takip.py || echo "::error::haber_takip başarısız"
           python is_ilanlari.py || echo "::error::is_ilanlari başarısız"
+          python deprem.py || echo "::error::deprem başarısız"
+          python zamanli.py ${{ inputs.gorev }} || echo "::error::zamanli başarısız"
       - name: Hafızayı kaydet
         if: always()
         uses: actions/cache/save@v4

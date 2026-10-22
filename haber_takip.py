@@ -131,6 +131,19 @@ def telegram_foto(png, metin):
         urllib.request.urlopen(istek, timeout=60).read()
 
 
+GUNLUK = KOK / "durum" / "gunluk_haber.json"
+
+
+def gunluk_kaydet(dosya, kayit, simdi, sakla_gun=8):
+    """Günün özeti gibi zamanlı paylaşımlar için gönderilenleri gün gün tutar."""
+    veri = json.loads(dosya.read_text(encoding="utf-8")) if dosya.exists() else {}
+    veri.setdefault(simdi.strftime("%Y-%m-%d"), []).append(kayit)
+    sinir = (simdi - timedelta(days=sakla_gun)).strftime("%Y-%m-%d")
+    veri = {g: v for g, v in veri.items() if g >= sinir}
+    dosya.parent.mkdir(exist_ok=True)
+    dosya.write_text(json.dumps(veri, ensure_ascii=False), encoding="utf-8")
+
+
 def gonder_haber(g, simdi):
     """Kategoriye göre etiketli mesaj; önemli haberler tasarım kartıyla gider."""
     ilk = g["haberler"][0]
@@ -138,12 +151,15 @@ def gonder_haber(g, simdi):
     sinif = sinifla(ilk["baslik"])
     ust = sinif["etiket"] + ("  ·  🔴 ÖNEMLİ" if sinif["onemli"] else "")
     kaynaklar = "\n".join(f'📰 <a href="{html.escape(h["link"])}">{html.escape(h["site"])}</a>' for h in g["haberler"])
-    metin = f"{ust}\n<b>{html.escape(ilk['baslik'])}</b>\n🕒 {saat}\n{kaynaklar}"
+    ozet = g.get("ozet", "")
+    metin = f"{ust}\n<b>{html.escape(ilk['baslik'])}</b>\n" + (f"{html.escape(ozet)}\n" if ozet else "") + f"🕒 {saat}\n{kaynaklar}"
+    gunluk_kaydet(GUNLUK, {"baslik": ilk["baslik"], "kod": sinif["kod"], "etiket": sinif["etiket"], "onemli": sinif["onemli"],
+                           "siteler": list(dict.fromkeys(h["site"] for h in g["haberler"])), "link": ilk["link"], "saat": saat}, simdi)
     if sinif["onemli"]:
         try:
             from haber_kart import KATEGORI, ciz_kart
             png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": ilk["baslik"],
-                            "saat": saat, "kaynak": ", ".join(dict.fromkeys(h["site"] for h in g["haberler"]))},
+                            "ozet": ozet, "saat": saat},
                            KOK / "cikti" / "kartlar" / "son.png")
             telegram_foto(png, metin)
             return

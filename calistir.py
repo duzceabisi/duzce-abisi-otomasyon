@@ -3,14 +3,14 @@
 
 Kullanım:  python3 calistir.py <mod>
 Modlar (sunucudaki saatleri .github/workflows/sabah.yml'de):
-  gunaydin  06:30  bugünün havası
+  gunaydin  06:30  bugünün havası, namaz vakitleri, bugünkü kesintiler, paylaşılmamış vefatlar
   piyasa    09:30  döviz, altın, akaryakıt (piyasa 09:00'da açılıyor)
   eczane    18:00  bu gecenin nöbetçi eczaneleri (nöbet 18:30'da başlıyor)
-  yarin     21:00  yarının havası
+  yarin     21:00  yarının havası, gün içindeki yeni vefatlar
 Adımlar: topla.py (veri) -> ciz.py (görseller) -> gonder.py (Telegram)
 """
 import json, subprocess, sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -21,9 +21,30 @@ KOK = Path(__file__).resolve().parent
 TZ = ZoneInfo("Europe/Istanbul")
 ETIKET = "#düzce #düzcehaber #düzceabisi"
 
+KAYNAK = {"hava": "Open-Meteo", "namaz": "Diyanet", "kesinti": "yerel haber siteleri", "vefat": "Düzce Hür Haber",
+          "piyasa": "Truncgil Finans", "akaryakit": "Opet", "eczaneler": "Düzce Eczacı Odası"}
+
+
+def kesintiler():
+    """Son 18 saatte yayımlanan elektrik/su kesintisi haberleri (06:30 paketine)."""
+    from haber_takip import KAYNAKLAR, oku
+    from kategori import sinifla
+    simdi = datetime.now(TZ)
+    bulunan = {}
+    for site, url in [k for k in KAYNAKLAR if k[0] in ("Düzce Hür Haber", "Haber Düzce", "Öncü TV", "Google Haberler")]:
+        try:
+            for h in oku(site, url):
+                if sinifla(h["baslik"])["kod"] == "kesinti" and h["zaman"] and simdi - h["zaman"] < timedelta(hours=18):
+                    bulunan.setdefault(h["baslik"], h)
+        except Exception:
+            pass
+    return [["💧" if "su" in h["baslik"].lower().split() or "sular" in h["baslik"].lower() else "⚡", h["baslik"]]
+            for h in list(bulunan.values())[:6]]
+
+
 # mod -> (toplanacak bölümler, gün farkı, açıklama metni)
 MODLAR = {
-    "gunaydin": (("hava", "vefat"), 0,
+    "gunaydin": (("hava", "namaz", "kesinti", "vefat"), 0,
                  lambda d: f"☀️ Günaydın Düzce! {d['tarih']} {d['gun']}\n\n"
                            f"Bugün hava {d['hava']['durum'].lower()}, {d['hava']['en_dusuk']}–{d['hava']['en_yuksek']}°C. "
                            f"Şemsiye: {d['hava']['semsiye'].lower()}.\n\n{ETIKET} #havadurumu"),
@@ -45,7 +66,19 @@ def main():
     if mod not in MODLAR:
         sys.exit(f"Mod seçin: {', '.join(MODLAR)}")
     bolumler, gun, metin = MODLAR[mod]
-    d = topla([b for b in bolumler if b != "vefat"], gun)
+    d = topla([b for b in bolumler if b in ("hava", "piyasa", "akaryakit", "eczaneler")], gun)
+    d["sayfalar"] = []
+    if "namaz" in bolumler:
+        try:
+            from ekler import namaz
+            d["sayfalar"].append({"ad": "namaz", "etiket": "🕌 Namaz vakitleri", "baslik": "Düzce'de bugün", "satirlar": namaz(), "sinif": "buyuk"})
+        except Exception as hata:
+            d["eksik"].append(f"namaz: {hata}")
+    if "kesinti" in bolumler:
+        k = kesintiler()
+        if k:
+            d["sayfalar"].append({"ad": "kesinti", "etiket": "⚡ Kesintiler", "baslik": "Bugün dikkat!", "satirlar": k,
+                                  "alt": "Mahalle ve saat ayrıntısı için Düzce Abisi'ni takipte kalın.", "boy": 70})
     if "vefat" in bolumler:  # yalnızca daha önce paylaşılmamış vefatlar
         try:
             d["vefat"] = vefat.yeni_vefatlar()
@@ -58,8 +91,9 @@ def main():
 
     eksik = "\n\n⚠️ Eksik: " + "; ".join(d["eksik"]) if d["eksik"] else ""
     try:
+        kaynaklar = [KAYNAK[b] for b in bolumler if b in KAYNAK and (b != "vefat" or d.get("vefat"))]
         aciklama = metin(d) + (f"\n\n🕊️ Vefat ve cenaze: {', '.join(k['ad'] for k in d['vefat'])}. Allah rahmet eylesin."
-                               if d.get("vefat") else "") + eksik
+                               if d.get("vefat") else "") + f"\n\nKaynak: {', '.join(kaynaklar)}" + eksik
     except KeyError:  # bölüm hiç toplanamadıysa
         aciklama = f"⚠️ {mod} paylaşımı hazırlanamadı.{eksik}"
     subprocess.run([sys.executable, str(KOK / "ciz.py"), str(veri)], check=True)
