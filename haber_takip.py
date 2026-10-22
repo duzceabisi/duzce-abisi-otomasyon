@@ -44,6 +44,16 @@ KAYNAKLAR = [
      for ad, alan in [("Düzce Postası", "duzcepostasi.com"), ("Düzce Parantez", "duzceparantez.com"),
                       ("Oxijen TV", "oxijen.tv"), ("Düzce'nin Sesi", "duzceninsesi.com.tr"),
                       ("Düzce Damla", "duzcedamla.com")]]
+# RSS'i olmayan siteler: sayfadaki haber kartları okunur. (site, sayfa, desen, bağlantı ön eki)
+# Desenin ilk grubu bağlantı, ikinci grubu başlık. Bu kartlarda saat olmadığı için zaman None kalır.
+HTML_KAYNAKLAR = [
+    ("Düzce Belediyesi", "https://www.duzce.bel.tr/haberler",
+     r'<a href="(/haber/[^"]+)" class="related-news-card">.*?related-news-card-title">([^<]+)<', "https://www.duzce.bel.tr"),
+    ("Düzce Belediyesi Duyuru", "https://www.duzce.bel.tr/duyurular",
+     r'<a href="(/duyurular/[^"]+)" class="ilanlar-list-item">.*?ilanlar-list-item-title">([^<]+)<', "https://www.duzce.bel.tr"),
+    ("Düzce Manşet", "https://duzcemanset.com.tr/",
+     r'<a href="(https://duzcemanset\.com\.tr/[a-z0-9-]+-\d+)">\s*<img[^>]*alt="([^"]+)"', ""),
+]
 DOLGU = {"ve", "ile", "de", "da", "bir", "bu", "için", "olan", "oldu", "düzce", "düzcede", "düzceli", "sonra", "son", "dakika"}
 
 
@@ -88,6 +98,17 @@ def oku(site, url):
             yield {"site": kaynak or site, "baslik": baslik, "link": link, "zaman": zaman}
 
 
+def oku_html(site, url, desen, on_ek):
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=20) as r:
+        sayfa = r.read().decode("utf-8", "replace")
+    gorulen = set()
+    for link, baslik in re.findall(desen, sayfa, re.S):
+        baslik = html.unescape(re.sub(r"\s+", " ", baslik)).strip()
+        if link not in gorulen and len(baslik.split()) >= 3:
+            gorulen.add(link)
+            yield {"site": site, "baslik": baslik, "link": on_ek + link, "zaman": None}
+
+
 def telegram(metin):
     token = ayar("TELEGRAM_BOT_TOKEN")
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
@@ -109,9 +130,11 @@ def main():
     gonderilmis = [set(b[0].split()) for b in durum["basliklar"]]
 
     yeni, hatalar = [], []
-    for site, url in KAYNAKLAR:
+    kaynaklar = [(site, lambda s=site, u=url: oku(s, u)) for site, url in KAYNAKLAR] + \
+                [(a[0], lambda a=a: oku_html(*a)) for a in HTML_KAYNAKLAR]
+    for site, okuyucu in kaynaklar:
         try:
-            haberler = list(oku(site, url))
+            haberler = list(okuyucu())
             ilk_kez = site not in durum["siteler"]  # ilk okunuşta yalnızca kaydet, gönderme
             for h in haberler:
                 if h["link"] in durum["linkler"]:
@@ -139,7 +162,7 @@ def main():
             gruplar.append({"kelimeler": k, "haberler": [h]})
 
     if ilk_calisma:
-        telegram(f"✅ <b>Düzce Abisi haber takibi başladı</b>\n{len(KAYNAKLAR)} site taranıyor. "
+        telegram(f"✅ <b>Düzce Abisi haber takibi başladı</b>\n{len(KAYNAKLAR) + len(HTML_KAYNAKLAR)} kaynak taranıyor. "
                  f"Bundan sonra çıkan her yeni haber buraya gelecek.")
     else:
         for g in gruplar:
