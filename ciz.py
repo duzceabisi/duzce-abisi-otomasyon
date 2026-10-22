@@ -111,7 +111,7 @@ def sayfalar(d):
     if d.get("hava"):
      h = d["hava"]
      saat = "".join(f'<div><div class="s">{e(s)}</div><div class="i">{i}</div><div class="d">{t}°</div></div>' for s, t, i in h["saatlik"])
-     out.append(("hava", f"""<div class="ic"><div class="etiket">Hava durumu</div>
+     out.append(("hava", f"""<div class="ic"><div class="etiket">{e(h.get('baslik', 'Hava durumu'))}</div>
 <div class="derece"><div class="buyuk">{h['en_yuksek']}°</div><div class="kucuk">{h['ikon']} {e(h['durum'])}<br>En düşük {h['en_dusuk']}°C</div></div>
 <div class="saatlik">{saat}</div>
 <div class="rozetler"><div class="rozet">☂️ Şemsiye: {e(h['semsiye'])}</div><div class="rozet acik">🌧️ {e(h['yagmur'])}</div><div class="rozet acik">💨 {e(h['ruzgar'])}</div></div>

@@ -39,23 +39,26 @@ def getir(url, json_mi=True):
     return json.loads(veri) if json_mi else veri
 
 
-def hava():
+def hava(gun=0):
+    """gun=0 bugün, gun=1 yarın."""
     d = getir("https://api.open-meteo.com/v1/forecast?latitude=40.8438&longitude=31.1565"
               "&hourly=temperature_2m,precipitation_probability,weather_code"
               "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,wind_speed_10m_max"
-              "&timezone=Europe%2FIstanbul&forecast_days=1")
+              "&timezone=Europe%2FIstanbul&forecast_days=2")
     g, s = d["daily"], d["hourly"]
-    kod = s["weather_code"][12]  # günün havası: öğle saati
-    sisli = any(s["weather_code"][h] in (45, 48) for h in range(6, 11))
-    yagis = g["precipitation_probability_max"][0] or 0
+    o = 24 * gun  # saatlik dizide o günün başlangıcı
+    kod = s["weather_code"][o + 12]  # günün havası: öğle saati
+    sisli = any(s["weather_code"][o + h] in (45, 48) for h in range(6, 11))
+    yagis = g["precipitation_probability_max"][gun] or 0
     saatlik = []
     for saat in (9, 12, 15, 18, 21):
-        k = s["weather_code"][saat]
-        saatlik.append([f"{saat:02d}.00", round(s["temperature_2m"][saat]), WMO.get(k, ("", "🌡️"))[1]])
-    ruzgar = round(g["wind_speed_10m_max"][0])
+        k = s["weather_code"][o + saat]
+        saatlik.append([f"{saat:02d}.00", round(s["temperature_2m"][o + saat]), WMO.get(k, ("", "🌡️"))[1]])
+    ruzgar = round(g["wind_speed_10m_max"][gun])
     return {
         "durum": WMO.get(kod, ("Değişken", "🌡️"))[0], "ikon": WMO.get(kod, ("", "🌡️"))[1],
-        "en_dusuk": round(g["temperature_2m_min"][0]), "en_yuksek": round(g["temperature_2m_max"][0]),
+        "baslik": "Yarın hava" if gun else "Hava durumu",
+        "en_dusuk": round(g["temperature_2m_min"][gun]), "en_yuksek": round(g["temperature_2m_max"][gun]),
         "yagis_ihtimali": yagis,
         "yagmur": "Yağış beklenmiyor" if yagis < 30 else f"Yağış ihtimali %{yagis}",
         "semsiye": "Gerekmiyor" if yagis < 30 else ("Yanınıza alın" if yagis < 60 else "Mutlaka alın"),
@@ -150,13 +153,15 @@ def eczaneler_gentr():
             "kaynak": "eczaneler.gen.tr"}
 
 
-def main():
-    simdi = datetime.now(TZ)
-    out = {"tarih": f"{simdi.day} {AYLAR[simdi.month - 1]} {simdi.year}", "gun": GUNLER[simdi.weekday()],
-           "toplandi": simdi.strftime("%Y-%m-%d %H:%M"), "eksik": []}
-    for ad, is_ in [("hava", hava), ("piyasa", piyasa), ("akaryakit", akaryakit), ("eczaneler", eczaneler)]:
+def topla(bolumler=("hava", "piyasa", "akaryakit", "eczaneler"), gun=0):
+    """İstenen bölümleri toplar. gun=1 ise tarih ve hava yarına aittir."""
+    hedef_gun = datetime.now(TZ) + timedelta(days=gun)
+    out = {"tarih": f"{hedef_gun.day} {AYLAR[hedef_gun.month - 1]} {hedef_gun.year}", "gun": GUNLER[hedef_gun.weekday()],
+           "toplandi": datetime.now(TZ).strftime("%Y-%m-%d %H:%M"), "eksik": []}
+    isler = {"hava": lambda: hava(gun), "piyasa": piyasa, "akaryakit": akaryakit, "eczaneler": eczaneler}
+    for ad in bolumler:
         try:
-            sonuc = is_()
+            sonuc = isler[ad]()
             if ad == "piyasa":
                 out["doviz"], out["altin"], out["piyasa_saat"] = sonuc
                 out["piyasa_kaynak"] = "Truncgil Finans"
@@ -164,6 +169,12 @@ def main():
                 out[ad] = sonuc
         except Exception as hata:  # bir kaynak çökerse diğerleri yine toplansın
             out["eksik"].append(f"{ad}: {hata}")
+    return out
+
+
+def main():
+    simdi = datetime.now(TZ)
+    out = topla()
     hedef = KOK / "veri" / f"{simdi:%Y-%m-%d}-sabah.json"
     if len(sys.argv) > 1:
         hedef = Path(sys.argv[1])

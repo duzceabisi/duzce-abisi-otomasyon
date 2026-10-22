@@ -1,13 +1,25 @@
-# Her sabah 08.00'de (Türkiye) sabah paketini hazırlayıp Telegram'a gönderir.
-name: Sabah paketi
+# Günlük yayın akışı (Türkiye saati; GitHub UTC kullanır, Türkiye = UTC+3):
+#   06:30 gunaydin  bugünün havası
+#   09:30 piyasa    döviz, altın, akaryakıt
+#   18:00 eczane    bu gecenin nöbetçi eczaneleri
+#   21:00 yarin     yarının havası
+name: Günlük paylaşımlar
 
 on:
   schedule:
-    - cron: "0 5 * * *"   # 05:00 UTC = 08:00 Türkiye
-  workflow_dispatch:       # GitHub'da "Run workflow" ile elle de çalıştırılabilir
+    - cron: "30 3 * * *"
+    - cron: "30 6 * * *"
+    - cron: "0 15 * * *"
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+    inputs:
+      mod:
+        description: "gunaydin | piyasa | eczane | yarin"
+        required: true
+        default: piyasa
 
 jobs:
-  sabah:
+  paylas:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -15,18 +27,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Hangi paylaşım?
+        id: mod
+        run: |
+          case "${{ github.event.schedule }}" in
+            "30 3 * * *") m=gunaydin ;;
+            "30 6 * * *") m=piyasa ;;
+            "0 15 * * *") m=eczane ;;
+            "0 18 * * *") m=yarin ;;
+            *) m="${{ inputs.mod }}" ;;
+          esac
+          echo "mod=$m" >> "$GITHUB_OUTPUT"; echo "Paylaşım: $m"
       - name: Emoji yazı tipi
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-color-emoji
-      - name: Paketi hazırla ve gönder
+      - name: Hazırla ve gönder
         env:
           TZ: Europe/Istanbul
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python calistir.py
+        run: python calistir.py "${{ steps.mod.outputs.mod }}"
       - name: Görselleri sakla
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sabah-paketi
+          name: paylasim-${{ steps.mod.outputs.mod }}
           path: cikti/
           retention-days: 7
