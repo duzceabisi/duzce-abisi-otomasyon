@@ -9,13 +9,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - shell: bash {0}
-        env:
+      - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for m in openai/gpt-4.1-mini openai/gpt-4o-mini meta/Llama-3.3-70B-Instruct; do
-            echo "== MODEL $m"
-            curl -s --max-time 60 https://models.github.ai/inference/chat/completions \
-              -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/json" \
-              -d "{\"model\":\"$m\",\"messages\":[{\"role\":\"system\",\"content\":\"Düzce yerel haber sayfası için yazıyorsun. Yalnızca verilen bilgiyi kullan, bilgi uydurma. JSON döndür: {\\\"baslik\\\": en fazla 60 karakter, \\\"ozet\\\": en fazla 2 kısa cümle}\"},{\"role\":\"user\",\"content\":\"Başlık: Düzce'de konfeksiyon atölyesinde yangın! Alevlerin yayılması önlendi. Açıklama: Düzce'nin Şıralık Mahallesi'ndeki bir konfeksiyon atölyesinin elektrik panosunda çıkan yangın, itfaiyenin müdahalesiyle büyümeden söndürüldü.\"}],\"temperature\":0.3}" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("SONUC", d["choices"][0]["message"]["content"] if "choices" in d else d)'
-          done
+          cat > /tmp/t.py <<'PY'
+          import json, os, urllib.request, urllib.error
+          for m in ["openai/gpt-4.1-mini", "openai/gpt-4o-mini", "meta/Llama-3.3-70B-Instruct"]:
+              body = {"model": m, "temperature": 0.3, "messages": [
+                  {"role": "system", "content": "Düzce yerel haber sayfası için yazıyorsun. Yalnızca verilen bilgiyi kullan, bilgi uydurma. Sadece JSON döndür: {\"baslik\": \"en fazla 60 karakter\", \"ozet\": \"en fazla 2 kısa cümle\"}"},
+                  {"role": "user", "content": "Başlık: Düzce'de konfeksiyon atölyesinde yangın! Alevlerin yayılması önlendi. Açıklama: Düzce'nin Şıralık Mahallesi'ndeki bir konfeksiyon atölyesinin elektrik panosunda çıkan yangın, itfaiyenin müdahalesiyle büyümeden söndürüldü."}]}
+              req = urllib.request.Request("https://models.github.ai/inference/chat/completions", data=json.dumps(body).encode(),
+                  headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Content-Type": "application/json", "Accept": "application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      d = json.load(r); print("SONUC", m, "->", d["choices"][0]["message"]["content"])
+                      print("SONUC limit:", {k: v for k, v in r.headers.items() if "ratelimit" in k.lower()})
+              except urllib.error.HTTPError as e:
+                  print("SONUC", m, "HTTP", e.code, e.read()[:300])
+          PY
+          python3 /tmp/t.py
