@@ -58,14 +58,15 @@ DOLGU = {"ve", "ile", "de", "da", "bir", "bu", "için", "olan", "oldu", "düzce"
 
 
 def kelimeler(baslik):
+    """Başlığın kelime kökleri: Türkçe ekler yüzünden "kaldırıma" ile "kaldırım" aynı sayılsın diye ilk 5 harf."""
     b = baslik.replace("İ", "i").replace("I", "ı").lower()
-    return {k for k in re.findall(r"\w+", b) if len(k) > 2 and k not in DOLGU}
+    return {k[:5] for k in re.findall(r"\w+", b) if len(k) > 2 and k not in DOLGU}
 
 
 def benzer(a, b):
-    if not a or not b:
-        return False
-    return len(a & b) / min(len(a), len(b)) >= BENZERLIK
+    """Aynı olay mı: kısa başlığın köklerinin %60'ı ortak ve en az 3 ortak kök."""
+    ortak = len(a & b)
+    return bool(a and b) and ortak >= 3 and ortak / min(len(a), len(b)) >= BENZERLIK
 
 
 def oku(site, url):
@@ -127,7 +128,7 @@ def main():
     sinir = (simdi - SAKLA).strftime("%Y-%m-%d %H:%M")
     durum["linkler"] = {k: v for k, v in durum["linkler"].items() if v >= sinir}
     durum["basliklar"] = [b for b in durum["basliklar"] if b[1] >= sinir]
-    gonderilmis = [set(b[0].split()) for b in durum["basliklar"]]
+    gonderilmis = [{k[:5] for k in b[0].split()} for b in durum["basliklar"]]
 
     yeni, hatalar = [], []
     kaynaklar = [(site, lambda s=site, u=url: oku(s, u)) for site, url in KAYNAKLAR] + \
