@@ -15,6 +15,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from topla import topla
+import vefat
 
 KOK = Path(__file__).resolve().parent
 TZ = ZoneInfo("Europe/Istanbul")
@@ -22,7 +23,7 @@ ETIKET = "#düzce #düzcehaber #düzceabisi"
 
 # mod -> (toplanacak bölümler, gün farkı, açıklama metni)
 MODLAR = {
-    "gunaydin": (("hava",), 0,
+    "gunaydin": (("hava", "vefat"), 0,
                  lambda d: f"☀️ Günaydın Düzce! {d['tarih']} {d['gun']}\n\n"
                            f"Bugün hava {d['hava']['durum'].lower()}, {d['hava']['en_dusuk']}–{d['hava']['en_yuksek']}°C. "
                            f"Şemsiye: {d['hava']['semsiye'].lower()}.\n\n{ETIKET} #havadurumu"),
@@ -32,7 +33,7 @@ MODLAR = {
     "eczane": (("eczaneler",), 0,
                lambda d: f"💊 Bu gece nöbetçi eczaneler — {d['eczaneler']['donem']}\n\n"
                          f"Merkez ve ilçelerin listesi 👇 Gitmeden önce telefonla teyit edin.\n\n{ETIKET} #nöbetçieczane"),
-    "yarin": (("hava",), 1,
+    "yarin": (("hava", "vefat"), 1,
               lambda d: f"🌙 Yarın Düzce'de hava nasıl? {d['tarih']} {d['gun']}\n\n"
                         f"{d['hava']['durum']}, {d['hava']['en_dusuk']}–{d['hava']['en_yuksek']}°C. "
                         f"Şemsiye: {d['hava']['semsiye'].lower()}.\n\n{ETIKET} #havadurumu"),
@@ -44,7 +45,12 @@ def main():
     if mod not in MODLAR:
         sys.exit(f"Mod seçin: {', '.join(MODLAR)}")
     bolumler, gun, metin = MODLAR[mod]
-    d = topla(bolumler, gun)
+    d = topla([b for b in bolumler if b != "vefat"], gun)
+    if "vefat" in bolumler:  # yalnızca daha önce paylaşılmamış vefatlar
+        try:
+            d["vefat"] = vefat.yeni_vefatlar()
+        except Exception as hata:
+            d["eksik"].append(f"vefat: {hata}")
     ad = f"{datetime.now(TZ):%Y-%m-%d}-{mod}"
     veri = KOK / "veri" / f"{ad}.json"
     veri.parent.mkdir(exist_ok=True)
@@ -52,12 +58,15 @@ def main():
 
     eksik = "\n\n⚠️ Eksik: " + "; ".join(d["eksik"]) if d["eksik"] else ""
     try:
-        aciklama = metin(d) + eksik
+        aciklama = metin(d) + (f"\n\n🕊️ Vefat ve cenaze: {', '.join(k['ad'] for k in d['vefat'])}. Allah rahmet eylesin."
+                               if d.get("vefat") else "") + eksik
     except KeyError:  # bölüm hiç toplanamadıysa
         aciklama = f"⚠️ {mod} paylaşımı hazırlanamadı.{eksik}"
     subprocess.run([sys.executable, str(KOK / "ciz.py"), str(veri)], check=True)
     if any((KOK / "cikti" / ad).glob("*.png")):
         subprocess.run([sys.executable, str(KOK / "gonder.py"), str(KOK / "cikti" / ad), aciklama], check=True)
+        if d.get("vefat"):
+            vefat.kaydet(d["vefat"])  # yalnızca gönderim başarılıysa: gönderilemeyen bir sonraki pakete kalır
     else:
         from haber_takip import telegram
         telegram(aciklama)

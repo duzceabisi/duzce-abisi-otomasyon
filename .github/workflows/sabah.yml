@@ -1,8 +1,8 @@
 # Günlük yayın akışı (Türkiye saati; GitHub UTC kullanır, Türkiye = UTC+3):
-#   06:30 gunaydin  bugünün havası
+#   06:30 gunaydin  bugünün havası + paylaşılmamış vefatlar
 #   09:30 piyasa    döviz, altın, akaryakıt
 #   18:00 eczane    bu gecenin nöbetçi eczaneleri
-#   21:00 yarin     yarının havası
+#   21:00 yarin     yarının havası + gün içindeki yeni vefatlar
 name: Günlük paylaşımlar
 
 on:
@@ -38,6 +38,12 @@ jobs:
             *) m="${{ inputs.mod }}" ;;
           esac
           echo "mod=$m" >> "$GITHUB_OUTPUT"; echo "Paylaşım: $m"
+      - name: Paylaşılmış vefatların hafızasını getir
+        uses: actions/cache/restore@v4
+        with:
+          path: durum
+          key: gunluk-durum-${{ github.run_id }}
+          restore-keys: gunluk-durum-
       - name: Emoji yazı tipi
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-color-emoji
       - name: Hazırla ve gönder
@@ -46,6 +52,12 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python calistir.py "${{ steps.mod.outputs.mod }}"
+      - name: Hafızayı kaydet
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: durum
+          key: gunluk-durum-${{ github.run_id }}
       - name: Görselleri sakla
         if: always()
         uses: actions/upload-artifact@v4

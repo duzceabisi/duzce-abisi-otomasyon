@@ -87,6 +87,12 @@ td.satis{font-family:'Archivo Black';color:var(--yesil)}
 .ilc .ead{text-align:left;font-weight:800;color:var(--murekkep)}
 .ilc .ead small{display:block;font-size:19px;font-weight:500;color:var(--gri);margin-top:2px}
 .ilc .etel{font-family:'Archivo Black';color:var(--kirmizi);white-space:nowrap;font-size:26px}
+.vefatsayfa{background:#ECE9E4}
+.vefatsayfa .ust{background:#2A2F2C}
+.vefat .kart{margin-bottom:18px;padding:26px 34px;border-left:8px solid #2A2F2C}
+.vefat h3{font-family:'Archivo Black';font-size:38px;color:#2A2F2C}
+.vefat p{font-size:25px;margin-top:8px;color:#3B423E;line-height:1.35}
+.vefat .vab{color:var(--gri);font-size:23px;margin-top:4px}
 .ecz .tel{font-family:'Archivo Black';font-size:32px;color:var(--kirmizi);white-space:nowrap}
 """
 
@@ -157,6 +163,16 @@ def sayfalar(d):
      out.append(("eczane-ilceler", f"""<div class="ic ilc"><div class="etiket">Nöbetçi eczaneler · İlçeler</div>
 <h1 style="font-size:60px">Bu gece ilçelerde</h1><p class="not" style="margin:-10px 0 24px;font-size:28px">🌙 {e(ec['donem'])}</p>
 <div class="kart"><table>{sat}</table></div></div>""", ec.get("kaynak", ""), ""))
+    vefat = d.get("vefat") or []
+    for bas in range(0, len(vefat), 4):
+        kartlar = "".join(
+            f'<div class="kart vkart"><h3>{e(k["ad"])}</h3><p class="vab">{e(k.get("anne_baba", ""))}</p>'
+            f'<p>🕌 <b>Cenaze namazı:</b> {e(k.get("namaz") or "-")}</p>'
+            f'<p>🪦 <b>Defin:</b> {e(k.get("defin") or "-")}{" · " + e(k["defin_tarihi"]) if k.get("defin_tarihi") else ""}</p></div>'
+            for k in vefat[bas:bas + 4])
+        out.append((f"vefat-{bas // 4 + 1}", f"""<div class="ic vefat"><div class="etiket">Vefat ve cenaze</div>
+<h1 style="font-size:58px">Aramızdan ayrılanlar</h1>{kartlar}
+<p class="not" style="font-size:26px">Allah rahmet eylesin; ailelerine ve sevenlerine başsağlığı dileriz.</p></div>""", "Düzce Hür Haber", "vefatsayfa"))
     return out
 
 
