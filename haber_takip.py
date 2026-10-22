@@ -37,6 +37,8 @@ KAYNAKLAR = [
     ("Öncü TV", "https://www.oncurtv.com/rss"),
     ("Düzce Hür Haber", "https://www.duzcehurhaber.com/rss"),
     ("Haber Düzce", "https://www.haberduzce.com/rss.xml"),
+    # bazı yerel siteler yurt dışı sunucuları engelliyor; Google Haberler onların bir kısmını ve ajansları kapsıyor
+    ("Google Haberler", "https://news.google.com/rss/search?q=D%C3%BCzce+when:1d&hl=tr&gl=TR&ceid=TR:tr"),
 ]
 DOLGU = {"ve", "ile", "de", "da", "bir", "bu", "için", "olan", "oldu", "düzce", "düzcede", "düzceli", "sonra", "son", "dakika"}
 
@@ -63,6 +65,9 @@ def oku(site, url):
                 raise
     for it in kok.iter("item"):
         baslik = html.unescape((it.findtext("title") or "").strip())
+        kaynak = it.findtext("source")  # yalnızca Google Haberler'de dolu
+        if kaynak:
+            baslik = baslik.removesuffix(" - " + kaynak).strip()
         link = (it.findtext("link") or "").strip()
         tarih = it.findtext("pubDate")
         try:
@@ -70,7 +75,7 @@ def oku(site, url):
         except (TypeError, ValueError):
             zaman = None
         if baslik and link and "/makale/" not in link:  # köşe yazıları haber değil
-            yield {"site": site, "baslik": baslik, "link": link, "zaman": zaman}
+            yield {"site": kaynak or site, "baslik": baslik, "link": link, "zaman": zaman}
 
 
 def telegram(metin):
