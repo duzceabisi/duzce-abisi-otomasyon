@@ -1,0 +1,183 @@
+{
+  "tarih": "22 Ekim 2026",
+  "gun": "Perşembe",
+  "toplandi": "2026-10-22 15:49",
+  "eksik": [],
+  "hava": {
+    "durum": "Az bulutlu",
+    "ikon": "🌤️",
+    "en_dusuk": 7,
+    "en_yuksek": 23,
+    "yagis_ihtimali": 0,
+    "yagmur": "Yağış beklenmiyor",
+    "semsiye": "Gerekmiyor",
+    "saatlik": [
+      [
+        "09.00",
+        12,
+        "🌥️"
+      ],
+      [
+        "12.00",
+        20,
+        "🌤️"
+      ],
+      [
+        "15.00",
+        23,
+        "☀️"
+      ],
+      [
+        "18.00",
+        20,
+        "🌤️"
+      ],
+      [
+        "21.00",
+        12,
+        "🌤️"
+      ]
+    ],
+    "ruzgar": "En fazla 6 km/sa",
+    "not": "Sabah saatlerinde yer yer sis var; sürücüler dikkatli olsun.",
+    "kaynak": "Open-Meteo"
+  },
+  "doviz": [
+    [
+      "🇺🇸",
+      "Dolar",
+      "49,6248",
+      "49,6307"
+    ],
+    [
+      "🇪🇺",
+      "Euro",
+      "55,7312",
+      "55,7487"
+    ],
+    [
+      "🇬🇧",
+      "Sterlin",
+      "66,5157",
+      "66,5253"
+    ]
+  ],
+  "altin": [
+    [
+      "Gram",
+      "6.511,23",
+      "6.512,18"
+    ],
+    [
+      "Çeyrek",
+      "10.428,89",
+      "10.667,33"
+    ],
+    [
+      "Yarım",
+      "20.792,60",
+      "21.334,65"
+    ],
+    [
+      "Tam",
+      "41.715,56",
+      "42.538,82"
+    ],
+    [
+      "Cumhuriyet",
+      "43.093,00",
+      "43.754,00"
+    ],
+    [
+      "Ata",
+      "43.019,17",
+      "44.104,67"
+    ]
+  ],
+  "piyasa_saat": "15.45",
+  "piyasa_kaynak": "Truncgil Finans",
+  "akaryakit": {
+    "ilce": "Merkez",
+    "liste": [
+      [
+        "Benzin",
+        "77,15"
+      ],
+      [
+        "Motorin",
+        "97,54"
+      ]
+    ],
+    "kaynak": "Opet"
+  },
+  "eczaneler": {
+    "donem": "22 Ekim Perşembe akşamı → 23 Ekim Cuma sabahı",
+    "bolge": "Düzce Merkez",
+    "liste": [
+      [
+        "Çaklı Eczanesi",
+        "Dereli Tütüncü Mahallesi, Tütüncü Sokak No:51/B Merkez",
+        "0380 611 46 12"
+      ],
+      [
+        "Yeni Kent Eczanesi",
+        "Aziziye Mahallesi, Şehit Ramazan Gel Caddesi No:32/B Merkez",
+        "0531 280 16 17"
+      ],
+      [
+        "Bahçelievler Eczanesi",
+        "Nalbantoğlu Mahallesi, 2.Düzce Bulvarı No:17/5B Kalıcı Konutlar Merkez",
+        "0380 411 63 48"
+      ],
+      [
+        "Gedik Eczanesi",
+        "Orhangazi Mahallesi, Konuralp Caddesi, 495.Sokak 1/A Merkez",
+        "0380 524 52 33"
+      ]
+    ],
+    "diger_ilceler": [
+      [
+        "Akçakoca",
+        "Büyük Eczane",
+        "0380 611 35 23"
+      ],
+      [
+        "Çilimli",
+        "Neslihan Eczanesi",
+        "0380 681 71 81"
+      ],
+      [
+        "Cumayeri",
+        "Deva Eczanesi",
+        "0380 735 50 51"
+      ],
+      [
+        "Gölyaka",
+        "Gölyaka Eczanesi",
+        "0380 711 43 63"
+      ],
+      [
+        "Gümüşova",
+        "Gümüşova Eczanesi",
+        "0380 731 40 50"
+      ],
+      [
+        "Kaynaşlı",
+        "İpek Eczanesi",
+        "0380 544 41 42"
+      ],
+      [
+        "Yığılca",
+        "Yığılca Eczanesi",
+        "0380 651 54 71"
+      ]
+    ]
+  },
+  "manset": [
+    "Hava 7–23°C, yağış beklenmiyor",
+    "Gram altın 6.512 TL",
+    "Dolar 49,63 TL",
+    "Benzin 77,15 TL, motorin 97,54 TL",
+    "Bu gece nöbetçi 4 eczane"
+  ]
+}

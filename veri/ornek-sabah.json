@@ -1,0 +1,280 @@
+{
+ "tarih": "22 Ekim 2026",
+ "gun": "Perşembe",
+ "toplandi": "2026-10-22 15:33",
+ "eksik": [],
+ "hava": {
+  "durum": "Sisli",
+  "ikon": "🌫️",
+  "en_dusuk": 7,
+  "en_yuksek": 23,
+  "yagis_ihtimali": 0,
+  "yagmur": "Yağış beklenmiyor",
+  "semsiye": "Gerekmiyor",
+  "saatlik": [
+   [
+    "09.00",
+    12,
+    "🌫️"
+   ],
+   [
+    "12.00",
+    20,
+    "🌤️"
+   ],
+   [
+    "15.00",
+    23,
+    "☀️"
+   ],
+   [
+    "18.00",
+    20,
+    "🌤️"
+   ],
+   [
+    "21.00",
+    12,
+    "🌤️"
+   ]
+  ],
+  "ruzgar": "En fazla 6 km/sa",
+  "not": "",
+  "kaynak": "Open-Meteo"
+ },
+ "doviz": [
+  [
+   "🇺🇸",
+   "Dolar",
+   "49,6216",
+   "49,6338"
+  ],
+  [
+   "🇪🇺",
+   "Euro",
+   "55,7288",
+   "55,7501"
+  ],
+  [
+   "🇬🇧",
+   "Sterlin",
+   "66,5114",
+   "66,5218"
+  ]
+ ],
+ "altin": [
+  [
+   "Gram",
+   "6.499,35",
+   "6.500,15"
+  ],
+  [
+   "Çeyrek",
+   "10.404,94",
+   "10.642,85"
+  ],
+  [
+   "Yarım",
+   "20.744,85",
+   "21.285,70"
+  ],
+  [
+   "Tam",
+   "41.619,77",
+   "42.441,22"
+  ],
+  [
+   "Cumhuriyet",
+   "43.093,00",
+   "43.754,00"
+  ],
+  [
+   "Ata",
+   "42.920,39",
+   "44.003,47"
+  ]
+ ],
+ "piyasa_saat": "15.30",
+ "piyasa_kaynak": "Truncgil Finans",
+ "akaryakit": {
+  "ilce": "Merkez",
+  "liste": [
+   [
+    "Benzin",
+    "77,15"
+   ],
+   [
+    "Motorin",
+    "97,54"
+   ]
+  ],
+  "kaynak": "Opet"
+ },
+ "eczaneler": {
+  "donem": "22 Ekim Perşembe akşamı → 23 Ekim Cuma sabahı",
+  "bolge": "Düzce Merkez",
+  "liste": [
+   [
+    "Çaklı Eczanesi",
+    "Dereli Tütüncü Mahallesi, Tütüncü Sokak No:51/B Merkez",
+    "0380 611 46 12"
+   ],
+   [
+    "Yeni Kent Eczanesi",
+    "Aziziye Mahallesi, Şehit Ramazan Gel Caddesi No:32/B Merkez",
+    "0531 280 16 17"
+   ],
+   [
+    "Bahçelievler Eczanesi",
+    "Nalbantoğlu Mahallesi, 2.Düzce Bulvarı No:17/5B Kalıcı Konutlar Merkez",
+    "0380 411 63 48"
+   ],
+   [
+    "Gedik Eczanesi",
+    "Orhangazi Mahallesi, Konuralp Caddesi, 495.Sokak 1/A Merkez",
+    "0380 524 52 33"
+   ]
+  ],
+  "diger_ilceler": [
+   [
+    "Akçakoca",
+    "Büyük Eczane",
+    "0380 611 35 23"
+   ],
+   [
+    "Çilimli",
+    "Neslihan Eczanesi",
+    "0380 681 71 81"
+   ],
+   [
+    "Cumayeri",
+    "Deva Eczanesi",
+    "0380 735 50 51"
+   ],
+   [
+    "Gölyaka",
+    "Gölyaka Eczanesi",
+    "0380 711 43 63"
+   ],
+   [
+    "Gümüşova",
+    "Gümüşova Eczanesi",
+    "0380 731 40 50"
+   ],
+   [
+    "Kaynaşlı",
+    "İpek Eczanesi",
+    "0380 544 41 42"
+   ],
+   [
+    "Yığılca",
+    "Yığılca Eczanesi",
+    "0380 651 54 71"
+   ]
+  ]
+ },
+ "manset": [
+  "Yağmur yok, sıcaklık 26 dereceye çıkıyor",
+  "4 ilçede 8 saate varan elektrik kesintisi",
+  "Bu akşam 20.00'de interaktif etkinlik",
+  "Bu gece nöbetçi 4 eczane",
+  "Dünya Kekemelik Farkındalık Günü"
+ ],
+ "kesinti": {
+  "baslik": "4 ilçede planlı elektrik kesintisi",
+  "ilceler": [
+   [
+    "Kaynaşlı",
+    [
+     [
+      "09.00–15.30",
+      "Bektaşlı, Bıçkıyanı, Çamlıca, Çaykara, Dipsizgöl, Doğantepe, Hamzalı ve çevresi"
+     ],
+     [
+      "09.00–17.00",
+      "Bülbüldere, Çakırsayvan, Özyanık, Sazköy, Sinekli"
+     ]
+    ]
+   ],
+   [
+    "Akçakoca",
+    [
+     [
+      "09.00–10.00",
+      "Osmaniye Mah. belirli sokaklar"
+     ],
+     [
+      "09.00–17.00",
+      "Giresunlular, Göktepe, Kepenç, Kınık, Kirazlı, Koçar, Kurugöl, Ortanca, Yeşilköy"
+     ]
+    ]
+   ],
+   [
+    "Cumayeri",
+    [
+     [
+      "09.00–12.00",
+      "Hamasçık çevresi"
+     ],
+     [
+      "13.00–15.30",
+      "Hamasçık ve Merkez çevresi"
+     ]
+    ]
+   ],
+   [
+    "Yığılca",
+    [
+     [
+      "09.00–15.00",
+      "Yeniyer Köyü İç Yolu çevresi"
+     ],
+     [
+      "09.30–17.30",
+      "Çırnık, Mehmetköy, Orta"
+     ]
+    ]
+   ]
+  ],
+  "not": "Düzce Merkez'de bugün planlı kesinti yok. Kesintiler mahallenin tamamını kapsamayabilir.",
+  "kaynak": "SEDAŞ"
+ },
+ "etkinlik": {
+  "ad": "Kefeli Kaos — İnteraktif Eğlence",
+  "saat": "20.00",
+  "yer": "Kefeli Sanat Atölye Sahne",
+  "fiyat": "1.200 TL"
+ },
+ "tarihte_bugun": [
+  [
+   "1600",
+   "Osmanlı ordusu Kanije Kalesi'ni fethetti."
+  ],
+  [
+   "1860",
+   "Tercüman-ı Ahval gazetesi yayımlanmaya başladı."
+  ],
+  [
+   "1919",
+   "Amasya Görüşmeleri'nin ardından protokoller imzalandı."
+  ],
+  [
+   "1962",
+   "Kennedy, Küba'daki Sovyet füzelerini açıkladı; Küba Krizi başladı."
+  ],
+  [
+   "1964",
+   "Jean-Paul Sartre Nobel Edebiyat Ödülü'nü reddetti."
+  ],
+  [
+   "1988",
+   "Barış Manço'nun 7'den 77'ye programı TRT'de başladı."
+  ]
+ ],
+ "onemli_gun": {
+  "ad": "Dünya Kekemelik Farkındalık Günü",
+  "ikon": "💚",
+  "mesaj": "Önemli olan nasıl konuştuğumuz değil, birbirimizi nasıl dinlediğimizdir.",
+  "aciklama": "Sözü kesmeden, sabırla ve anlayışla dinlemek hepimizin sorumluluğu. 1998'den beri her yıl 22 Ekim'de anılıyor."
+ }
+}

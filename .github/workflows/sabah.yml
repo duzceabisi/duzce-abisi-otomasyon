@@ -1,0 +1,32 @@
+# Her sabah 08.00'de (Türkiye) sabah paketini hazırlayıp Telegram'a gönderir.
+name: Sabah paketi
+
+on:
+  schedule:
+    - cron: "0 5 * * *"   # 05:00 UTC = 08:00 Türkiye
+  workflow_dispatch:       # GitHub'da "Run workflow" ile elle de çalıştırılabilir
+
+jobs:
+  sabah:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Emoji yazı tipi
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-color-emoji
+      - name: Paketi hazırla ve gönder
+        env:
+          TZ: Europe/Istanbul
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python calistir.py
+      - name: Görselleri sakla
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sabah-paketi
+          path: cikti/
+          retention-days: 7
