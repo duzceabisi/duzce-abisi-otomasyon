@@ -97,21 +97,32 @@ def eczaneler():
             raise hata
 
 
+ODA_ILCELER = [("1292", "Merkez"), ("2032", "Konuralp"), ("1116", "Akçakoca"), ("1784", "Cumayeri"),
+               ("1905", "Çilimli"), ("1794", "Gölyaka"), ("2017", "Gümüşova"), ("2031", "Kaynaşlı"), ("1730", "Yığılca")]
+
+
 def eczaneler_oda():
     bugun = datetime.now(TZ)
-    istek = urllib.request.Request("https://www.duzceeo.org/nobetkarti", headers=UA, data=urllib.parse.urlencode(
-        {"tarihk": f"{bugun:%Y-%m-%d}", "ilce": "1292", "gnr": "NÖBET ARA"}).encode())  # 1292 = Merkez
-    with urllib.request.urlopen(istek, timeout=20) as r:
-        s = r.read().decode("utf-8")
-    # oda sitesi İ yerine çoğu yerde I yazıyor; küçük harfe çevirmek "Demır" gibi bozuk sonuç verir, olduğu gibi bırak
-    liste = [[ad.strip(), re.sub(r"\s+", " ", adres).strip(), tel.strip()] for ad, adres, tel in re.findall(
-        r'class="adi"[^>]*>\s*([^<]+?)\s*</div>.*?class="adres">\s*(.*?)\s*<br>\s*<b>TEL:</b>\s*([^<]+)</div>', s, re.S)]
-    if not liste:
+    merkez, diger = [], []
+    for kod, ilce in ODA_ILCELER:
+        istek = urllib.request.Request("https://www.duzceeo.org/nobetkarti", headers=UA, data=urllib.parse.urlencode(
+            {"tarihk": f"{bugun:%Y-%m-%d}", "ilce": kod, "gnr": "NÖBET ARA"}).encode())
+        with urllib.request.urlopen(istek, timeout=20) as r:
+            s = r.read().decode("utf-8")
+        # oda sitesi İ yerine çoğu yerde I yazıyor; küçük harfe çevirmek "Demır" gibi bozuk sonuç verir, olduğu gibi bırak
+        for ad, adres, tel in re.findall(
+                r'class="adi"[^>]*>\s*([^<]+?)\s*</div>.*?class="adres">\s*(.*?)\s*<br>\s*<b>TEL:</b>\s*([^<]+)</div>', s, re.S):
+            kayit = [ad.strip(), re.sub(r"\s+", " ", adres).strip(), tel.strip()]
+            if ilce in ("Merkez", "Konuralp"):
+                merkez.append(kayit)
+            else:
+                diger.append([ilce] + kayit)
+    if not merkez and not diger:
         raise ValueError("Eczacı Odası listesi boş")
     yarin = bugun + timedelta(days=1)
     return {"donem": f"{bugun.day} {AYLAR[bugun.month - 1]} {GUNLER[bugun.weekday()]} akşamı → "
                      f"{yarin.day} {AYLAR[yarin.month - 1]} {GUNLER[yarin.weekday()]} sabahı",
-            "bolge": "Düzce Merkez", "liste": liste, "kaynak": "Düzce Eczacı Odası"}
+            "bolge": "Düzce Merkez", "liste": merkez, "ilceler": diger, "kaynak": "Düzce Eczacı Odası"}
 
 
 def eczaneler_gentr():
@@ -135,7 +146,7 @@ def eczaneler_gentr():
     merkez = [[e["ad"], e["adres"], e["tel"]] for e in liste if e["ilce"] == "Merkez"]
     return {"donem": donem.replace("akşamından", "akşamı →").replace(" kadar", "").replace("sabahına", "sabahı"),
             "bolge": "Düzce Merkez", "liste": merkez,
-            "diger_ilceler": [[e["ilce"], e["ad"], e["tel"]] for e in liste if e["ilce"] != "Merkez"],
+            "ilceler": [[e["ilce"], e["ad"], e["adres"], e["tel"]] for e in liste if e["ilce"] != "Merkez"],
             "kaynak": "eczaneler.gen.tr"}
 
 

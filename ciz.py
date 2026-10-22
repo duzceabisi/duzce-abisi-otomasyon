@@ -82,6 +82,11 @@ td.satis{font-family:'Archivo Black';color:var(--yesil)}
 .yakit .ad{font-family:'Archivo Black';font-size:56px;color:var(--yesil)}
 .yakit .f{font-family:'Archivo Black';font-size:96px;color:var(--kirmizi)}
 .yakit .f small{font-size:40px;color:var(--gri)}
+.ilc td{font-size:27px;padding:12px 0;vertical-align:top}
+.ilc td:first-child{width:200px}
+.ilc .ead{text-align:left;font-weight:800;color:var(--murekkep)}
+.ilc .ead small{display:block;font-size:19px;font-weight:500;color:var(--gri);margin-top:2px}
+.ilc .etel{font-family:'Archivo Black';color:var(--kirmizi);white-space:nowrap;font-size:26px}
 .ecz .tel{font-family:'Archivo Black';font-size:32px;color:var(--kirmizi);white-space:nowrap}
 """
 
@@ -146,6 +151,12 @@ def sayfalar(d):
      ek = "".join(f'<div class="kart"><div><h3>💊 {e(a)}</h3><p>{e(adr)}</p></div><div class="tel">{e(t)}</div></div>' for a, adr, t in ec["liste"])
      out.append(("eczane", f"""<div class="ic ecz"><div class="etiket">Nöbetçi eczaneler · {e(ec['bolge'])}</div>
 <h1>Bu gece nöbetçi</h1><p class="not" style="margin:-10px 0 30px;font-size:30px">🌙 {e(ec['donem'])}</p>{ek}<p class="not" style="font-size:24px">Gitmeden önce telefonla açık olduklarını teyit edin.</p></div>""", ec.get("kaynak", "eczaneler.gen.tr"), ""))
+    if d.get("eczaneler", {}).get("ilceler"):
+     ec = d["eczaneler"]
+     sat = "".join(f'<tr><td>{e(il)}</td><td class="ead">{e(a)}<small>{e(adr)}</small></td><td class="etel">{e(t)}</td></tr>' for il, a, adr, t in ec["ilceler"])
+     out.append(("eczane-ilceler", f"""<div class="ic ilc"><div class="etiket">Nöbetçi eczaneler · İlçeler</div>
+<h1 style="font-size:60px">Bu gece ilçelerde</h1><p class="not" style="margin:-10px 0 24px;font-size:28px">🌙 {e(ec['donem'])}</p>
+<div class="kart"><table>{sat}</table></div></div>""", ec.get("kaynak", ""), ""))
     return out
 
 
