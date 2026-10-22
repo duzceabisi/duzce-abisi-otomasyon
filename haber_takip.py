@@ -196,7 +196,7 @@ def gonder_haber(g, simdi):
             from haber_kart import KATEGORI, ciz_kart
             png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": baslik,
                             "ozet": ozet, "yer": yer, "saat": saat},
-                           KOK / "cikti" / "kartlar" / "son.png")
+                           KOK / "cikti" / "kartlar" / "son.png", hikaye=True)  # Instagram hikâyesi boyutu
             telegram_foto(png, metin)
             return
         except Exception as hata:  # kart çizilemezse haber metin olarak yine gitsin

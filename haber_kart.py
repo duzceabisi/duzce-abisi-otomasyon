@@ -58,26 +58,41 @@ p{font-size:36px;line-height:1.4;font-weight:500;color:rgba(245,239,227,.88)}
 """
 
 
-def kart_html(k):
+HIKAYE_CSS = """
+html,body{height:1920px}
+.ust{height:260px;padding-top:120px}
+.simge{top:300px;font-size:640px}
+.ic{bottom:330px}
+.etiket{font-size:34px}
+p{font-size:42px}
+.yer{font-size:36px}
+.alt{bottom:150px;font-size:28px}
+"""
+
+
+def kart_html(k, hikaye=False):
     etiket, simge, ana, koyu = KATEGORI.get(k.get("kategori"), KATEGORI["genel"])
     boy = 92 if len(k["baslik"]) < 45 else (80 if len(k["baslik"]) < 70 else 66)
+    if hikaye:
+        boy += 14
     simdi = datetime.now(TZ)
     e = html.escape
     yer = f'<div class="yer">📍 {e(k["yer"])}</div>' if k.get("yer") else ""
-    return f"""<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{CSS}</style></head>
+    return f"""<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{CSS}{HIKAYE_CSS if hikaye else ""}</style></head>
 <body style="--ana:{ana};--koyu:{koyu};--boy:{boy}px"><div class="zemin"></div><div class="simge">{simge}</div>
 <div class="ust"><div class="marka">DÜZCE <span>ABİSİ</span></div><div class="saat">{simdi.day} {AYLAR[simdi.month - 1]} · {e(k.get("saat", simdi.strftime("%H.%M")))}</div></div>
 <div class="ic"><div class="etiket">{simge} {etiket}</div><h1>{e(k["baslik"])}</h1><p>{e(k.get("ozet", ""))}</p>{yer}</div>
 <div class="alt"><span>Düzce'nin haber ve hizmet sayfası</span><span>Takip et → @duzceabisi</span></div></body></html>"""
 
 
-def ciz_kart(k, png):
+def ciz_kart(k, png, hikaye=False):
+    """hikaye=True: Instagram hikâyesi boyutu 1080x1920 (üst ve alttaki 250 px'lik arayüz alanı boş bırakılır)."""
     png = Path(png)
     png.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         h = Path(tmp) / "kart.html"
-        h.write_text(kart_html(k), encoding="utf-8")
-        subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--window-size={W},{H}",
+        h.write_text(kart_html(k, hikaye), encoding="utf-8")
+        subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--window-size={W},{1920 if hikaye else H}",
                         "--virtual-time-budget=4000", f"--screenshot={png}", h.as_uri()], check=True, capture_output=True)
     return png
 
