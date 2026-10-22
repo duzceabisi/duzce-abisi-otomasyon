@@ -10,8 +10,8 @@ dosyanın üstüne Claude tarafından eklenir (bkz. GOREV.md).
 Bir kaynak çökerse o bölüm boş kalır ve "eksik" listesine yazılır; diğerleri
 yine toplanır.
 """
-import html, json, re, sys, urllib.request
-from datetime import datetime
+import html, json, re, sys, urllib.parse, urllib.request
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -87,6 +87,34 @@ def akaryakit():
 
 
 def eczaneler():
+    """Bu akşamın Düzce Merkez nöbetçileri: önce Eczacı Odası, olmazsa eczaneler.gen.tr."""
+    try:
+        return eczaneler_oda()
+    except Exception as hata:
+        try:
+            return eczaneler_gentr()
+        except Exception:
+            raise hata
+
+
+def eczaneler_oda():
+    bugun = datetime.now(TZ)
+    istek = urllib.request.Request("https://www.duzceeo.org/nobetkarti", headers=UA, data=urllib.parse.urlencode(
+        {"tarihk": f"{bugun:%Y-%m-%d}", "ilce": "1292", "gnr": "NÖBET ARA"}).encode())  # 1292 = Merkez
+    with urllib.request.urlopen(istek, timeout=20) as r:
+        s = r.read().decode("utf-8")
+    # oda sitesi İ yerine çoğu yerde I yazıyor; küçük harfe çevirmek "Demır" gibi bozuk sonuç verir, olduğu gibi bırak
+    liste = [[ad.strip(), re.sub(r"\s+", " ", adres).strip(), tel.strip()] for ad, adres, tel in re.findall(
+        r'class="adi"[^>]*>\s*([^<]+?)\s*</div>.*?class="adres">\s*(.*?)\s*<br>\s*<b>TEL:</b>\s*([^<]+)</div>', s, re.S)]
+    if not liste:
+        raise ValueError("Eczacı Odası listesi boş")
+    yarin = bugun + timedelta(days=1)
+    return {"donem": f"{bugun.day} {AYLAR[bugun.month - 1]} {GUNLER[bugun.weekday()]} akşamı → "
+                     f"{yarin.day} {AYLAR[yarin.month - 1]} {GUNLER[yarin.weekday()]} sabahı",
+            "bolge": "Düzce Merkez", "liste": liste, "kaynak": "Düzce Eczacı Odası"}
+
+
+def eczaneler_gentr():
     s = getir("https://www.eczaneler.gen.tr/nobetci-duzce", json_mi=False)
     bas = s.index('id="nav-bugun"')
     bit = s.find('id="nav-yarin"', bas)
@@ -107,7 +135,8 @@ def eczaneler():
     merkez = [[e["ad"], e["adres"], e["tel"]] for e in liste if e["ilce"] == "Merkez"]
     return {"donem": donem.replace("akşamından", "akşamı →").replace(" kadar", "").replace("sabahına", "sabahı"),
             "bolge": "Düzce Merkez", "liste": merkez,
-            "diger_ilceler": [[e["ilce"], e["ad"], e["tel"]] for e in liste if e["ilce"] != "Merkez"]}
+            "diger_ilceler": [[e["ilce"], e["ad"], e["tel"]] for e in liste if e["ilce"] != "Merkez"],
+            "kaynak": "eczaneler.gen.tr"}
 
 
 def main():

@@ -145,7 +145,7 @@ def sayfalar(d):
      ec = d["eczaneler"]
      ek = "".join(f'<div class="kart"><div><h3>💊 {e(a)}</h3><p>{e(adr)}</p></div><div class="tel">{e(t)}</div></div>' for a, adr, t in ec["liste"])
      out.append(("eczane", f"""<div class="ic ecz"><div class="etiket">Nöbetçi eczaneler · {e(ec['bolge'])}</div>
-<h1>Bu gece nöbetçi</h1><p class="not" style="margin:-10px 0 30px;font-size:30px">🌙 {e(ec['donem'])}</p>{ek}<p class="not" style="font-size:24px">Gitmeden önce telefonla açık olduklarını teyit edin.</p></div>""", "eczaneler.gen.tr", ""))
+<h1>Bu gece nöbetçi</h1><p class="not" style="margin:-10px 0 30px;font-size:30px">🌙 {e(ec['donem'])}</p>{ek}<p class="not" style="font-size:24px">Gitmeden önce telefonla açık olduklarını teyit edin.</p></div>""", ec.get("kaynak", "eczaneler.gen.tr"), ""))
     return out
 
 

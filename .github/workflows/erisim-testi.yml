@@ -1,13 +1,13 @@
-# Geçici: hangi kaynaklara sunucudan erişilebildiğini dener. Test bitince silinecek.
+# Geçici: sunucuda yalnızca veri toplamayı dener, Telegram'a göndermez. Test bitince silinecek.
 name: Erisim testi
 on: workflow_dispatch
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
       - run: |
-          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
-          for u in https://www.eczaneler.gen.tr/nobetci-duzce https://www.duzceeo.org/nobetci-eczaneler https://duzce.eczaneleri.org/ https://www.sabah.com.tr/duzce-nobetci-eczaneler https://www.cnnturk.com/nobetci-eczaneler/duzce/ https://www.happ.health/nobetci-eczane/duzce; do
-            c=$(curl -s -L -A "$UA" --max-time 20 -o /tmp/p.html -w "%{http_code}" "$u"); n=$(grep -oi "eczanesi" /tmp/p.html | wc -l)
-            echo "SONUC $c eczanesi=$n $u"
-          done
+          TZ=Europe/Istanbul python topla.py /tmp/t.json
+          python -c 'import json;d=json.load(open("/tmp/t.json"));print("SONUC eksik=",d["eksik"]);e=d.get("eczaneler",{});print("SONUC eczane",e.get("kaynak"),len(e.get("liste",[])),e.get("donem"))'
