@@ -42,7 +42,20 @@ if [ ! -f .env ]; then
   printf 'TELEGRAM_BOT_TOKEN=%s\nTELEGRAM_CHAT_ID=%s\nGEMINI_API_KEY=%s\n' "$TG" "$CHAT" "$GEM" > .env
   chmod 600 .env
 fi
-grep -q '^GORSEL_MOTORU=' .env || { [ $GORSEL = 1 ] && echo 'GORSEL_MOTORU=yerel' >> .env || echo 'GORSEL_MOTORU=' >> .env; }
+# Habere özel görsel: bu makinede yeterince hızlıysa (3 dk içinde bir görsel) aç, değilse hazır kütüphaneyi kullan
+if ! grep -q '^GORSEL_MOTORU=' .env; then
+  MOTOR=""
+  if [ $GORSEL = 1 ]; then
+    echo "== Görsel hız testi (ilk seferde model indirilir, ~2 GB)"
+    .venv/bin/python -c "from huggingface_hub import snapshot_download as s; s('SimianLuo/LCM_Dreamshaper_v7')" >/dev/null 2>&1 || true
+    if GORSEL_MOTORU=yerel perl -e 'alarm shift; exec @ARGV' 180 .venv/bin/python gorsel.py "quiet town street at dusk, warm lights" >/dev/null 2>&1; then
+      MOTOR=yerel; echo "   hızlı: habere özel görsel AÇIK"
+    else
+      echo "   yavaş ya da hata: habere özel görsel KAPALI (hazır görsel kütüphanesi kullanılacak)"
+    fi
+  fi
+  echo "GORSEL_MOTORU=$MOTOR" >> .env
+fi
 
 echo "== Deneme turu (Telegram'a gönderilmez)"
 DENEME=1 .venv/bin/python yerel/dongu.py --bir-tur || true

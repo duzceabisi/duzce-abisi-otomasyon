@@ -200,7 +200,9 @@ def telegram_album_url(urller, metin):
                                headers={"Content-Type": "application/json"}), timeout=90).read()
 
 
-AI_SINIRI = 25         # bir taramada önemli olmayan haberlerden en fazla bu kadarı yapay zekâyla özetlenir (ücretsiz kota)
+AI_SINIRI = 25
+GORSEL_SINIRI = 3      # bir taramada habere özel üretilecek en fazla görsel (yalnızca önemli haberler; yerel sunucu)
+_gorsel_sayac = {"n": 0}         # bir taramada önemli olmayan haberlerden en fazla bu kadarı yapay zekâyla özetlenir (ücretsiz kota)
 _ai_sayac = {"n": 0}
 
 
@@ -234,7 +236,10 @@ def gonder_haber(g, simdi, kaydet=True):
         try:
             from haber_kart import KATEGORI, ciz_kart
             from gorsel import habere_ozel
-            foto = habere_ozel(sahne, sinif["kod"]) if deneme == 0 else None  # yalnızca yerel sunucuda (GORSEL_MOTORU)
+            foto = None
+            if deneme == 0 and sinif["onemli"] and _gorsel_sayac["n"] < GORSEL_SINIRI:  # yalnızca yerel sunucuda (GORSEL_MOTORU)
+                foto = habere_ozel(sahne, sinif["kod"])
+                _gorsel_sayac["n"] += bool(foto)
             png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": baslik,
                             "ozet": kart_ozet, "yer": yer, "saat": saat, "foto": str(foto) if foto else ""},
                            KOK / "cikti" / "kartlar" / "son.png", hikaye=True)  # Instagram hikâyesi boyutu
