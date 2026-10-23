@@ -63,6 +63,7 @@ MODLAR = {
 
 def main():
     mod = sys.argv[1] if len(sys.argv) > 1 else ""
+    onizleme = "--onizleme" in sys.argv  # deneme: gönder ama hafızaya yazma
     if mod not in MODLAR:
         sys.exit(f"Mod seçin: {', '.join(MODLAR)}")
     bolumler, gun, metin = MODLAR[mod]
@@ -99,7 +100,7 @@ def main():
     subprocess.run([sys.executable, str(KOK / "ciz.py"), str(veri)], check=True)
     if any((KOK / "cikti" / ad).glob("*.png")):
         subprocess.run([sys.executable, str(KOK / "gonder.py"), str(KOK / "cikti" / ad), aciklama], check=True)
-        if d.get("vefat"):
+        if d.get("vefat") and not onizleme:
             vefat.kaydet(d["vefat"])  # yalnızca gönderim başarılıysa: gönderilemeyen bir sonraki pakete kalır
     else:
         from haber_takip import telegram

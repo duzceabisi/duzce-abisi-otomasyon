@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       gorev:
-        description: "Boş = normal tarama. Ya da hemen çalıştır: burc | market | tarihte | is_ozet | ozet | etkinlik_hafta | hafta_sonu"
+        description: "Boş = normal tarama. onizleme = günün tüm akışını hemen gönder (hafızaya yazmaz). Ya da tek görev: burc | market | tarihte | is_ozet | ozet | etkinlik_hafta | hafta_sonu"
         required: false
         default: ""
 
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   tara:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
