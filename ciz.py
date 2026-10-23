@@ -12,7 +12,7 @@ CHROME = (os.environ.get("CHROME")
           or next((p for p in ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"] if os.path.exists(p)), None)
           or shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chromium-browser")
           or next(iter(sorted(glob.glob(os.path.expanduser("~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome")))), None))
-W, H = 1080, 1350
+W, H = 1080, 1920  # Instagram hikâyesi; üst ve alt ~250 px Instagram'ın düğmelerine bırakılır
 
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&display=swap');
@@ -105,14 +105,74 @@ td.satis{font-family:'Archivo Black';color:var(--yesil)}
 """
 
 
+# Hikâye teması: koyu, arka planda karartılmış temsili görsel, açık renk yazı
+HIKAYE = """
+html,body{width:1080px;height:1920px}
+body,body.kapak,body.gun,body.vefatsayfa{background:#0B1310;color:#F5EFE3}
+.bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.ort{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,14,11,.80) 0%,rgba(6,14,11,.58) 22%,rgba(6,14,11,.72) 50%,rgba(6,14,11,.82) 78%,rgba(6,14,11,.94) 100%)}
+.yildiz .bg{background:radial-gradient(circle at 20% 15%,rgba(255,255,255,.9) 0 2px,transparent 3px),radial-gradient(circle at 70% 8%,rgba(255,255,255,.7) 0 2px,transparent 3px),
+  radial-gradient(circle at 85% 30%,rgba(255,255,255,.8) 0 1.5px,transparent 2.5px),radial-gradient(circle at 40% 40%,rgba(255,255,255,.6) 0 1.5px,transparent 2.5px),
+  radial-gradient(ellipse at 50% 0%,#3B2470 0%,#14102E 55%,#070611 100%)}
+.ust,.kapak .ust,.vefatsayfa .ust{position:relative;z-index:2;height:auto;padding:150px 64px 0;background:transparent}
+.tarih{background:rgba(255,255,255,.14)}
+.ic{position:absolute;z-index:2;left:0;right:0;top:300px;bottom:300px;padding:0 64px;display:flex;flex-direction:column;justify-content:center}
+.ic>.etiket,.ic>.ikon{align-self:flex-start}
+.etiket{color:#E39B2D;border-bottom-color:#E39B2D;font-size:28px}
+h1,.kapak h1,.uyari h1,.gun blockquote{color:#fff}
+h1{font-size:88px}
+.kart{background:rgba(255,255,255,.09);border:1.5px solid rgba(255,255,255,.14);backdrop-filter:blur(6px)}
+.not,.kapak .alt{color:rgba(245,239,227,.72)}
+.alt{position:absolute;z-index:2;bottom:180px;color:rgba(245,239,227,.6);font-size:24px}
+.derece .buyuk{color:#fff;font-size:340px}.derece .kucuk{color:rgba(245,239,227,.85);font-size:44px}
+.saatlik div{background:rgba(255,255,255,.09);padding:40px 0}.saatlik .s{color:rgba(245,239,227,.7);font-size:30px}
+.saatlik .i{font-size:64px}.saatlik .d{color:#fff;font-size:52px}
+.rozet{background:#E39B2D;color:#1B130A;font-size:32px;padding:20px 32px}.rozet.acik{background:rgba(255,255,255,.12);color:#fff}
+th{color:rgba(255,255,255,.55)}td{color:#F5EFE3;border-top-color:rgba(255,255,255,.12);font-size:40px;padding:18px 0}
+td:first-child,.bolum{color:#fff}td.satis{color:#E39B2D}
+.yakit .ad{color:#fff}.yakit .f{color:#E39B2D}.yakit .f small{color:rgba(255,255,255,.6)}.yakit .kart{padding:60px 48px}
+.ilce h3{color:#fff}.ilce p{color:#F5EFE3;font-size:28px}
+.zaman li,.liste li,.manset li{border-top-color:rgba(255,255,255,.14)}.zaman span,.liste span{color:#F5EFE3}
+.zaman li{padding:22px 0}.zaman span{font-size:33px}.zaman b{font-size:44px}.liste li{padding:28px 0}.liste span{font-size:36px}.liste b{font-size:36px}
+.ecz .kart{padding:40px 40px;margin-bottom:26px}.ecz h3{color:#fff;font-size:42px}.ecz p{color:rgba(255,255,255,.7);font-size:28px}.ecz .tel{color:#E39B2D;font-size:36px}
+.ilc td{font-size:32px;padding:18px 0}.ilc .ead{color:#fff}.ilc .ead small{color:rgba(255,255,255,.65);font-size:23px}.ilc .etel{color:#E39B2D;font-size:30px}
+.vefat .kart{border-left:8px solid rgba(255,255,255,.55);padding:34px 38px;margin-bottom:24px}.vefat h3{color:#fff;font-size:46px}
+.vefat p{color:#F5EFE3;font-size:30px}.vefat .vab{color:rgba(255,255,255,.65);font-size:27px}
+.burcsayfa .liste li{padding:34px 0}.burcsayfa .liste b{font-size:46px}.burcsayfa .liste span{font-size:34px;line-height:1.42}
+.buyuk .liste li{padding:36px 0}.buyuk .liste b{font-size:60px}.buyuk .liste span{color:#fff;font-size:72px}
+.manset li{font-size:52px;padding:40px 0}
+"""
+
+# sayfa adı -> arka plan kategorisi (arkaplan/<kategori>-<n>.jpg); "yildiz" = çizimle yıldızlı gökyüzü
+ARKA = {"hava": "genel", "piyasa": "genel", "akaryakit": "genel", "eczane": "genel", "namaz": "genel-3", "kesinti": "kesinti",
+        "vefat": "olum", "burc": "yildiz", "tarih": "genel", "ozel": "genel", "ozet": "genel", "is": "genel",
+        "etkinlik": "firsat", "bim": "firsat", "kapak": "genel", "gun": "genel"}
+
+
+def arka_plan(ad, d):
+    anahtar = next((v for k, v in ARKA.items() if ad.startswith(k)), "genel")
+    if ad.startswith("hava") and d.get("hava", {}).get("yagis_ihtimali", 0) >= 50:
+        anahtar = "hava"
+    if anahtar == "yildiz":
+        return None, "yildiz"
+    tek = KOK / "arkaplan" / f"{anahtar}.jpg"
+    adaylar = [tek] if tek.exists() else sorted((KOK / "arkaplan").glob(f"{anahtar}-*.jpg"))
+    if not adaylar:
+        return None, ""
+    secim = adaylar[sum(map(ord, ad + d.get("tarih", ""))) % len(adaylar)]
+    return secim, ""
+
+
 def e(s):
     return html.escape(str(s))
 
 
-def sayfa(govde, d, no, top, kaynak="", sinif=""):
+def sayfa(govde, d, no, top, kaynak="", sinif="", ad=""):
     sol = "Düzce Abisi · @duzceabisi"  # kaynak görselde yazmaz, Telegram metninde yazılır
-    return f"""<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{CSS}</style></head>
-<body class="{sinif}"><div class="ust"><div class="marka">DÜZCE <span>ABİSİ</span></div><div class="tarih">{e(d['tarih'])} · {e(d['gun'])}</div></div>
+    foto, ek = arka_plan(ad, d)
+    bg = f'<div class="bg" style="background-image:url({foto.as_uri()})"></div>' if foto else '<div class="bg"></div>'
+    return f"""<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{CSS}{HIKAYE}</style></head>
+<body class="{sinif} {ek}">{bg}<div class="ort"></div><div class="ust"><div class="marka">DÜZCE <span>ABİSİ</span></div><div class="tarih">{e(d['tarih'])} · {e(d['gun'])}</div></div>
 {govde}<div class="alt"><span>{sol}</span><span>{no} / {top}</span></div></body></html>"""
 
 
@@ -198,7 +258,7 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         for i, (ad, govde, kaynak, sinif) in enumerate(sf, 1):
             h = Path(tmp) / f"{i:02d}.html"
-            h.write_text(sayfa(govde, d, i, len(sf), kaynak, sinif), encoding="utf-8")
+            h.write_text(sayfa(govde, d, i, len(sf), kaynak, sinif, ad), encoding="utf-8")
             png = hedef / f"{i:02d}-{ad}.png"
             subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
                             f"--window-size={W},{H}", "--virtual-time-budget=4000",

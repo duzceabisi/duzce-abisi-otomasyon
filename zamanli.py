@@ -57,7 +57,9 @@ def burc(simdi):
 def tarihte(simdi):
     from ekler import tarihte_bugun
     t = tarihte_bugun(simdi)
-    sayfalar = [{"ad": "tarihte", "etiket": "📜 Tarihte bugün", "baslik": f"{simdi.day} {AYLAR[simdi.month - 1]}", "satirlar": t["olaylar"]}]
+    # hikâye sayfasına sığması için en fazla 6 olay, her biri en fazla ~110 karakter
+    olaylar = [[y, m if len(m) <= 110 else m[:108].rsplit(" ", 1)[0] + "…"] for y, m in t["olaylar"][-6:]]
+    sayfalar = [{"ad": "tarihte", "etiket": "📜 Tarihte bugün", "baslik": f"{simdi.day} {AYLAR[simdi.month - 1]}", "satirlar": olaylar}]
     if t["gunler"]:
         sayfalar.append({"ad": "ozel-gunler", "etiket": "Bugünün özel günleri", "baslik": "Bugün dünyada",
                          "satirlar": [["📅", g] for g in t["gunler"]]})
