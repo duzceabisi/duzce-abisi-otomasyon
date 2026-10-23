@@ -1,4 +1,5 @@
-# Günlük yayın akışı (Türkiye saati; GitHub UTC kullanır, Türkiye = UTC+3):
+# Günlük yayın akışı (Türkiye saati; GitHub UTC kullanır, Türkiye = UTC+3).
+# GitHub zamanlanmış işleri ~30-45 dk geciktirdiği için cron saatleri hedefin 30 dk öncesine ayarlı:
 #   06:30 gunaydin  bugünün havası + paylaşılmamış vefatlar
 #   09:30 piyasa    döviz, altın, akaryakıt
 #   18:00 eczane    bu gecenin nöbetçi eczaneleri
@@ -7,10 +8,10 @@ name: Günlük paylaşımlar
 
 on:
   schedule:
-    - cron: "30 3 * * *"
-    - cron: "30 6 * * *"
-    - cron: "0 15 * * *"
-    - cron: "0 18 * * *"
+    - cron: "0 3 * * *"
+    - cron: "0 6 * * *"
+    - cron: "30 14 * * *"
+    - cron: "30 17 * * *"
   workflow_dispatch:
     inputs:
       mod:
@@ -31,10 +32,10 @@ jobs:
         id: mod
         run: |
           case "${{ github.event.schedule }}" in
-            "30 3 * * *") m=gunaydin ;;
-            "30 6 * * *") m=piyasa ;;
-            "0 15 * * *") m=eczane ;;
-            "0 18 * * *") m=yarin ;;
+            "0 3 * * *") m=gunaydin ;;
+            "0 6 * * *") m=piyasa ;;
+            "30 14 * * *") m=eczane ;;
+            "30 17 * * *") m=yarin ;;
             *) m="${{ inputs.mod }}" ;;
           esac
           echo "mod=$m" >> "$GITHUB_OUTPUT"; echo "Paylaşım: $m"

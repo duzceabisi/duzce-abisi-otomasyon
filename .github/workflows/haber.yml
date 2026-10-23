@@ -1,4 +1,4 @@
-# 10 dakikada bir: haberler, iş ilanları, deprem; saati gelen zamanlı paylaşımlar (burç, tarihte bugün, özetler).
+# Yaklaşık 5 dakikada bir: haberler, iş ilanları, deprem; saati gelen zamanlı paylaşımlar (burç, tarihte bugün, özetler).
 name: Haber takibi
 
 on:
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   tara:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,10 +39,17 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          python haber_takip.py || echo "::error::haber_takip başarısız"
-          python is_ilanlari.py || echo "::error::is_ilanlari başarısız"
-          python deprem.py || echo "::error::deprem başarısız"
-          python zamanli.py ${{ inputs.gorev }} || echo "::error::zamanli başarısız"
+          # GitHub zamanlanmış işleri ~30 dk'da bir başlatıyor; her çalışmada 5 dk arayla 6 tur tarama yapılır
+          # (elle bir görev ya da önizleme istenirse tek tur)
+          TUR=6; [ -n "${{ inputs.gorev }}" ] && TUR=1
+          for i in $(seq 1 $TUR); do
+            echo "=== tur $i/$TUR $(date +%H:%M)"
+            python haber_takip.py || echo "::error::haber_takip başarısız"
+            python is_ilanlari.py || echo "::error::is_ilanlari başarısız"
+            python deprem.py || echo "::error::deprem başarısız"
+            python zamanli.py ${{ inputs.gorev }} || echo "::error::zamanli başarısız"
+            if [ $i -lt $TUR ]; then sleep 270; fi
+          done
       - name: Hafızayı kaydet
         if: always()
         uses: actions/cache/save@v4
