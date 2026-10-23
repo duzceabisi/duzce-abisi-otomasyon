@@ -16,7 +16,7 @@ def ayar(ad):
         return os.environ[ad]
     env = KOK / ".env"
     if env.exists():
-        for satir in env.read_text(encoding="utf-8").splitlines():
+        for satir in env.read_text(encoding="utf-8-sig").splitlines():
             if satir.startswith(ad + "="):
                 return satir.split("=", 1)[1].strip()
     sys.exit(f"{ad} bulunamadı (.env ya da ortam değişkeni)")

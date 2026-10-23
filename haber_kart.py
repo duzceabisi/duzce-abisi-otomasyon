@@ -125,7 +125,7 @@ def ciz_kart(k, png, hikaye=False):
     with tempfile.TemporaryDirectory() as tmp:
         h = Path(tmp) / "kart.html"
         h.write_text(kart_html(k, hikaye), encoding="utf-8")
-        subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--window-size={W},{1920 if hikaye else H}",
+        subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1", f"--window-size={W},{1920 if hikaye else H}",
                         "--virtual-time-budget=4000", f"--screenshot={png}", h.as_uri()], check=True, capture_output=True)
     return png
 

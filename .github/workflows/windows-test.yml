@@ -1,0 +1,36 @@
+# Geçici: Windows kurulumunu gerçek bir Windows makinesinde dener (DENEME=1, Telegram'a gönderilmez)
+name: Windows testi
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Kurulum betiği (Windows PowerShell 5.1)
+        shell: cmd
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File yerel\kur.ps1 -Deneme
+      - name: Görev kaydı ve penceresiz (pythonw) çalışma
+        shell: powershell
+        run: |
+          Get-ScheduledTask -TaskName DuzceAbisiBot | Format-List TaskName,State
+          (Get-ScheduledTask -TaskName DuzceAbisiBot).Actions | Format-List Execute,Arguments,WorkingDirectory
+          $env:DENEME = "1"
+          Start-Process -FilePath .venv\Scripts\pythonw.exe -ArgumentList "yerel\dongu.py","--bir-tur" -Wait
+          Get-Content kayit\dongu.log -Encoding UTF8
+      - name: Görsel çizimi (günlük sayfalar ve haber kartı)
+        shell: powershell
+        env: {DENEME: "1", PYTHONUTF8: "1"}
+        run: |
+          .venv\Scripts\python.exe calistir.py gunaydin --onizleme
+          .venv\Scripts\python.exe -c "from haber_kart import ciz_kart; print(ciz_kart({'kategori':'kaza','baslik':'Gümüşova''da şiddetli çarpışma: 3 yaralı','ozet':'Çilimli yolunda iki otomobil çarpıştı; yaralılar hastaneye kaldırıldı.','yer':'Gümüşova','saat':'14.05','foto':''}, 'cikti/kartlar/win.png', hikaye=True))"
+          Get-ChildItem -Recurse cikti -Filter *.png | Select-Object FullName,Length
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: windows-cikti, path: "cikti/**/*.png"}

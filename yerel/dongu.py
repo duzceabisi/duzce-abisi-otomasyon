@@ -19,6 +19,11 @@ TZ = ZoneInfo("Europe/Istanbul")
 DURUM = KOK / "durum" / "yerel_gunluk.json"
 KAYIT = KOK / "kayit" / "dongu.log"
 PY = sys.executable
+if PY.lower().endswith("pythonw.exe"):  # Windows'ta pencere açmadan çalışırken alt işler de penceresiz başlasın
+    PY = PY[:-len("pythonw.exe")] + "python.exe"
+os.environ.setdefault("PYTHONUTF8", "1")         # Windows: Türkçe karakterli dosyalar ve çıktılar UTF-8
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+PENCERESIZ = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 TARAMA_ARALIGI = 300  # saniye
 TARAMA = ["haber_takip.py", "is_ilanlari.py", "deprem.py", "zamanli.py"]
 GUNLUK = [("gunaydin", 6, 30), ("piyasa", 9, 30), ("eczane", 18, 0), ("yarin", 21, 0)]
@@ -27,7 +32,8 @@ GUNLUK = [("gunaydin", 6, 30), ("piyasa", 9, 30), ("eczane", 18, 0), ("yarin", 2
 def yaz(*m):
     KAYIT.parent.mkdir(exist_ok=True)
     satir = f"{datetime.now(TZ):%Y-%m-%d %H:%M:%S} " + " ".join(map(str, m))
-    print(satir, flush=True)
+    if sys.stdout:  # pythonw (Windows, penceresiz) altında konsol yok
+        print(satir, flush=True)
     with KAYIT.open("a", encoding="utf-8") as f:
         f.write(satir + "\n")
     if KAYIT.stat().st_size > 5_000_000:  # kayıt dosyası 5 MB'ı geçerse eskisini sakla, yenisine başla
@@ -37,7 +43,8 @@ def yaz(*m):
 def calistir(*arg, sure=1500):
     t = time.time()
     try:
-        s = subprocess.run([PY, *arg], cwd=KOK, capture_output=True, text=True, timeout=sure)
+        s = subprocess.run([PY, *arg], cwd=KOK, capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=sure, creationflags=PENCERESIZ)
         ozet = [l for l in (s.stdout + s.stderr).splitlines() if l.strip() and "403" not in l][-6:]
         yaz(f"{' '.join(arg)} -> kod {s.returncode} ({time.time() - t:.0f} sn)", "|", " / ".join(ozet)[:600])
     except subprocess.TimeoutExpired:
@@ -59,7 +66,7 @@ def gunluk_isler(simdi):
 def guncelle(son):
     if time.time() - son < 3600 or not (KOK / ".git").exists():
         return son
-    s = subprocess.run(["git", "pull", "--ff-only", "-q"], cwd=KOK, capture_output=True, text=True)
+    s = subprocess.run(["git", "pull", "--ff-only", "-q"], cwd=KOK, capture_output=True, text=True, creationflags=PENCERESIZ)
     yaz("git pull ->", s.returncode, (s.stdout + s.stderr).strip()[:200])
     return time.time()
 
@@ -70,12 +77,15 @@ def main():
     son_guncelleme = 0.0
     while True:
         bas = time.time()
-        if not bir_tur:
-            son_guncelleme = guncelle(son_guncelleme)
-        simdi = datetime.now(TZ)
-        gunluk_isler(simdi)
-        for betik in TARAMA:
-            calistir(betik)
+        try:  # beklenmedik bir hata (ağ, disk) döngüyü durdurmasın
+            if not bir_tur:
+                son_guncelleme = guncelle(son_guncelleme)
+            simdi = datetime.now(TZ)
+            gunluk_isler(simdi)
+            for betik in TARAMA:
+                calistir(betik)
+        except Exception as hata:
+            yaz("döngü hatası:", repr(hata)[:300])
         if bir_tur:
             break
         time.sleep(max(30, TARAMA_ARALIGI - (time.time() - bas)))

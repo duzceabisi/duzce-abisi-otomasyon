@@ -11,7 +11,14 @@ KOK = Path(__file__).resolve().parent
 CHROME = (os.environ.get("CHROME")
           or next((p for p in ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"] if os.path.exists(p)), None)
           or shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chromium-browser")
-          or next(iter(sorted(glob.glob(os.path.expanduser("~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome")))), None))
+          or next(iter(sorted(glob.glob(os.path.expanduser("~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome")))), None)
+          # Windows: Chrome, yoksa her Windows'ta bulunan Edge (ikisi de aynı Chromium motoru)
+          or next((p for p in [os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+                               os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+                               os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+                               os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+                               os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe")]
+                if sys.platform == "win32" and os.path.exists(p)), None))
 W, H = 1080, 1920  # Instagram hikâyesi; üst ve alt ~250 px Instagram'ın düğmelerine bırakılır
 
 CSS = """
@@ -263,7 +270,7 @@ def main():
             h = Path(tmp) / f"{i:02d}.html"
             h.write_text(sayfa(govde, d, i, len(sf), kaynak, sinif, ad), encoding="utf-8")
             png = hedef / f"{i:02d}-{ad}.png"
-            subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+            subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
                             f"--window-size={W},{H}", "--virtual-time-budget=4000",
                             f"--screenshot={png}", h.as_uri()],
                            check=True, capture_output=True)
