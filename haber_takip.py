@@ -10,7 +10,7 @@ Sunucuda 10 dakikada bir çalışır (.github/workflows/haber.yml).
 - Aynı olay birden fazla sitede çıkarsa tek mesaj olarak, kaynakları
   birlikte gönderilir.
 """
-import html, json, re, sys, urllib.request, xml.etree.ElementTree as ET
+import collections, html, json, re, sys, urllib.request, xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -63,6 +63,43 @@ def kelimeler(baslik):
     """Başlığın kelime kökleri: Türkçe ekler yüzünden "kaldırıma" ile "kaldırım" aynı sayılsın diye ilk 5 harf."""
     b = baslik.replace("İ", "i").replace("I", "ı").lower()
     return {k[:5] for k in re.findall(r"\w+", b) if len(k) > 2 and k not in DOLGU}
+
+
+ILCELER = {"akçak", "cumay", "çilim", "gölya", "gümüş", "kayna", "yığıl", "konur"}
+GENEL_YER = {"düzce", "türki", "ankar", "istan", "sakar", "bolu", "zongu", "tem", "anado", "karad", "merke",
+             "cadde", "mahal", "köyü", "köyün", "kavşa", "sokağ", "sokak", "bulva", "mevki", "yolu", "ilçes", "beled", "valil"}
+YER_EKI = r"(?:Mahallesi|Mah\.|Caddesi|Cad\.|Köyü|Köyünde|Kavşağı|Kavşağında|Sokağı|Sokak|Bulvarı|Mevkii|Mevkiinde|Yolu|Köprüsü|Sitesi|ilçesi|ilçesinde|beldesi|beldesinde)"
+
+
+def yerler(metin):
+    """Yer adları: kesme işaretli özel adlar ("Aydınpınar'da") ve mahalle/köy/cadde adları. İlk 5 harf, küçük harf."""
+    metin = metin.replace("’", "'")
+    adlar = re.findall(r"([A-ZÇĞİÖŞÜ][\wçğıöşüÇĞİÖŞÜ]+)'", metin) + \
+            re.findall(rf"([A-ZÇĞİÖŞÜ][\wçğıöşüÇĞİÖŞÜ]+)\s+{YER_EKI}", metin)
+    out = {a.replace("İ", "i").replace("I", "ı").lower()[:5] for a in adlar}
+    return {a for a in out if len(a) > 2 and a not in GENEL_YER}
+
+
+def olay_imzasi(h):
+    metin = f"{h['baslik']}. {h.get('aciklama', '')}"
+    return {"kat": sinifla(h["baslik"])["kod"], "yer": yerler(metin), "kok": kelimeler(metin)}
+
+
+AILE = {"olum": "kaza", "asayis": "kaza", "kayip": "kaza"}  # ölüm/asayiş haberi çoğu zaman aynı kazanın devamı
+
+
+def ayni_olay(a, b, yaygin):
+    """Başlığı farklı yazılmış aynı olay. yaygin: bu taramada çok geçen (ayırt etmeyen) kökler."""
+    if AILE.get(a["kat"], a["kat"]) != AILE.get(b["kat"], b["kat"]):
+        return False
+    ortak_yer = a["yer"] & b["yer"]
+    nadir = (a["kok"] & b["kok"]) - yaygin - ortak_yer
+    ozel = ortak_yer - ILCELER
+    if ozel:                    # aynı mahalle/köy/cadde
+        return len(nadir) >= 2
+    if ortak_yer:               # yalnızca aynı ilçe
+        return len(nadir) >= 4
+    return len(nadir) >= 5 and len(nadir) >= 0.5 * min(len(a["kok"]), len(b["kok"]))
 
 
 def benzer(a, b):
@@ -250,6 +287,27 @@ def gonder_haber(g, simdi, kaydet=True):
     telegram(metin)  # iki denemede de kart çizilemezse haber kaybolmasın
 
 
+OLAY_SAKLA = timedelta(hours=48)
+
+
+def onceki_olay(imza, olaylar, yaygin):
+    """Bu olay son 48 saatte gönderildi mi? Önce kural (yer adı + ortak ayrıntı), sonra yapay zekâya sorulur."""
+    aile = AILE.get(imza["kat"], imza["kat"])
+    adaylar = [o for o in olaylar if AILE.get(o["kat"], o["kat"]) == aile]
+    for o in adaylar:
+        if ayni_olay(imza, {"kat": o["kat"], "yer": set(o["yer"]), "kok": set(o["kok"])}, yaygin):
+            return o
+    if adaylar and aile not in ("genel", "kurum", "ekonomi", "findik"):  # olay haberlerinde yapay zekâya da sor
+        try:
+            from ai import ayni_olay_mu
+            i = ayni_olay_mu(imza["metin"], [o["metin"] for o in adaylar[-15:]])
+            if i:
+                return adaylar[-15:][i - 1]
+        except Exception as hata:
+            print("aynı olay kontrolü atlandı:", hata, file=sys.stderr)
+    return None
+
+
 def main():
     simdi = datetime.now(TZ)
     ilk_calisma = not DURUM.exists()
@@ -259,6 +317,9 @@ def main():
     durum["linkler"] = {k: v for k, v in durum["linkler"].items() if v >= sinir}
     durum["basliklar"] = [b for b in durum["basliklar"] if b[1] >= sinir]
     gonderilmis = [{k[:5] for k in b[0].split()} for b in durum["basliklar"]]
+    olay_sinir = (simdi - OLAY_SAKLA).strftime("%Y-%m-%d %H:%M")
+    durum["olaylar"] = [o for o in durum.get("olaylar", []) if o["t"] >= olay_sinir]
+    hepsi = []  # bu taramada okunan tüm haberler (hangi kelimelerin yaygın olduğunu bulmak için)
 
     yeni, hatalar = [], []
     kaynaklar = [(site, lambda s=site, u=url: oku(s, u)) for site, url in KAYNAKLAR] + \
@@ -266,6 +327,7 @@ def main():
     for site, okuyucu in kaynaklar:
         try:
             haberler = list(okuyucu())
+            hepsi += haberler
             ilk_kez = site not in durum["siteler"]  # ilk okunuşta yalnızca kaydet, gönderme
             for h in haberler:
                 if h["link"] in durum["linkler"]:
@@ -295,6 +357,26 @@ def main():
         else:
             gruplar.append({"kelimeler": k, "haberler": [h]})
 
+    # başlığı farklı yazılmış aynı olay: bu taramadaki gruplar birleştirilir, son 48 saatte gönderilmişse atlanır
+    sayac = collections.Counter(k for x in hepsi for k in olay_imzasi(x)["kok"])
+    yaygin = {k for k, c in sayac.items() if c >= max(6, len(hepsi) * 0.015)}
+    birlesik = []
+    for g in gruplar:
+        h0 = g["haberler"][0]
+        g["imza"] = olay_imzasi(h0)
+        g["imza"]["metin"] = f"{h0['baslik']} — {h0.get('aciklama', '')[:200]}"
+        es = next((b for b in birlesik if ayni_olay(g["imza"], b["imza"], yaygin)), None)
+        if es:
+            es["haberler"] += [x for x in g["haberler"] if x["site"] not in [y["site"] for y in es["haberler"]]]
+            continue
+        o = onceki_olay(g["imza"], durum["olaylar"], yaygin) if not ilk_calisma else None
+        if o:
+            print("daha önce gönderildi, atlandı:", h0["baslik"], "≈", o["metin"][:70])
+            durum["basliklar"].append([" ".join(sorted(g["kelimeler"])), simdi.strftime("%Y-%m-%d %H:%M")])
+            continue
+        birlesik.append(g)
+    gruplar = birlesik
+
     if ilk_calisma:
         telegram(f"✅ <b>Düzce Abisi haber takibi başladı</b>\n{len(KAYNAKLAR) + len(HTML_KAYNAKLAR)} kaynak taranıyor. "
                  f"Bundan sonra çıkan her yeni haber buraya gelecek.")
@@ -305,6 +387,8 @@ def main():
 
     for g in gruplar:
         durum["basliklar"].append([" ".join(sorted(g["kelimeler"])), simdi.strftime("%Y-%m-%d %H:%M")])
+        durum["olaylar"].append({"t": simdi.strftime("%Y-%m-%d %H:%M"), "kat": g["imza"]["kat"], "yer": sorted(g["imza"]["yer"]),
+                                 "kok": sorted(g["imza"]["kok"]), "metin": g["imza"]["metin"]})
     DURUM.parent.mkdir(exist_ok=True)
     DURUM.write_text(json.dumps(durum, ensure_ascii=False), encoding="utf-8")
     print(f"{len(yeni)} yeni, {len(gruplar)} grup, ilk_calisma={ilk_calisma}")

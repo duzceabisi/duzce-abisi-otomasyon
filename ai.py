@@ -62,6 +62,29 @@ def ozetle(baslik, aciklama="", metin=""):
             "yer": str(s.get("yer", ""))[:60], "sahne": str(s.get("sahne", ""))[:400]}
 
 
+AYNI_TALIMAT = (
+    "Yerel haber sayfası için tekrar eden haberleri ayıklıyorsun. Sana YENİ bir haber ve daha önce gönderilmiş haberlerin "
+    "numaralı listesi verilecek. Yeni haber listedekilerden biriyle AYNI somut olayı mı anlatıyor (aynı kaza, yangın, "
+    "olay; aynı yer, kişi ya da ayrıntılar; başka bir sitenin farklı başlıkla verdiği haber ya da olayın devamı)? "
+    "Siteler aynı olayı farklı kelimelerle yazar: biri yer adını verir, öbürü vermez. Araç türü, nasıl olduğu "
+    "(devrilme, çarpma), yaralı/ölü sayısı, yaşlar ve isimler uyuşuyorsa ve çelişen bir ayrıntı yoksa AYNI olaydır. "
+    "Ayrıntılar çelişiyorsa (farklı araç, farklı sayı, farklı yer) ya da yalnızca tür aynıysa farklı olaydır. "
+    "JSON döndür: {\"ayni\": eşleşen haberin numarası ya da 0}")
+
+
+def ayni_olay_mu(yeni, onceki):
+    """yeni: 'başlık — açıklama'; onceki: aynı biçimde liste. Eşleşen 1'den başlayan sıra no, yoksa 0 (hata: None)."""
+    if not onceki:
+        return 0
+    liste = "\n".join(f"{i}) {m}" for i, m in enumerate(onceki, 1))
+    s = _cagir(AYNI_TALIMAT, f"YENİ: {yeni}\n\nDAHA ÖNCE GÖNDERİLENLER:\n{liste}", True)
+    try:
+        i = int(s.get("ayni", 0)) if isinstance(s, dict) else None
+    except (TypeError, ValueError):
+        return None
+    return i if i is not None and 0 <= i <= len(onceki) else None
+
+
 def gunun_ozeti(basliklar):
     if not basliklar:
         return None
