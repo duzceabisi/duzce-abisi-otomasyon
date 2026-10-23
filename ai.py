@@ -12,13 +12,18 @@ import json, sys, urllib.error, urllib.request
 
 from gonder import ayar
 
-MODELLER = ["gemini-flash-lite-latest", "gemini-flash-latest"]
+MODELLER = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest"]
 OZET_TALIMAT = (
-    "Düzce'nin yerel haber ve hizmet sayfası 'Düzce Abisi' için yazıyorsun. Sana bir haberin başlığı ve kısa açıklaması "
-    "verilecek. Yalnızca verilen bilgiyi kullan; isim, sayı, yer ya da ayrıntı UYDURMA. Kaynak sitenin cümlelerini kopyalama, "
-    "kendi cümlenle yaz. Abartısız, sade, anlaşılır Türkçe; büyük harfle bağırma, ünlem kullanma. JSON döndür: "
-    "{\"baslik\": en fazla 55 karakter, doğru ve dikkat çekici; \"ozet\": en fazla 2 kısa cümle; "
-    "\"yer\": geçiyorsa mahalle/köy/ilçe/yol adı, yoksa boş metin}")
+    "Düzce'nin yerel haber ve hizmet sayfası 'Düzce Abisi' için haber yazıyorsun. Sana bir haberin başlığı ve varsa haber "
+    "metni verilecek. Okuyan kişi haberi başka yere bakmadan tam anlamalı. Özet 3-4 cümle olsun ve metinde varsa şunları "
+    "MUTLAKA söylesin: ne oldu; nerede (ilçe, mahalle/köy, cadde); ne zaman; neden ve nasıl oldu; kimler (kurum, ekip; kişi "
+    "adları ve yaşları metinde geçiyorsa); sonuç ne oldu ya da bundan sonra ne olacak. Kural, yasak ya da duyuru haberlerinde "
+    "yeni mi olduğunu, kimi kapsadığını, ne zamandan geçerli olduğunu ve uymayanlara ne yapılacağını yaz. "
+    "Yalnızca metindeki bilgiyi kullan; metinde olmayan bilgiyi UYDURMA. Kaynak sitenin cümlelerini kopyalama, kendi "
+    "cümlenle yaz. Abartısız, sade Türkçe; büyük harfle bağırma, ünlem kullanma. JSON döndür: "
+    "{\"baslik\": en fazla 60 karakter, yer adını içersin, doğru ve dikkat çekici; \"ozet\": 3-4 cümle; "
+    "\"kisa\": özetin karta sığacak en fazla 170 karakterlik hali (en önemli ayrıntılar: ne, nerede, sonuç); "
+    "\"yer\": ilçe ve varsa mahalle/köy (ör. 'Gümüşova, Dededüzü köyü'), yoksa boş metin}")
 GUN_TALIMAT = (
     "Düzce'nin yerel haber sayfası 'Düzce Abisi' için günün kısa özetini yazıyorsun. Sana bugünün haber başlıkları "
     "verilecek. Yalnızca bu başlıklardaki bilgiyi kullan; başlıkta olmayan sebep, sonuç ya da ayrıntı EKLEME. Günün öne çıkanlarını 3-4 akıcı cümlede, "
@@ -45,11 +50,13 @@ def _cagir(talimat, metin, json_mu):
     return None
 
 
-def ozetle(baslik, aciklama=""):
-    s = _cagir(OZET_TALIMAT, f"Başlık: {baslik}\nAçıklama: {aciklama or '-'}", True)
+def ozetle(baslik, aciklama="", metin=""):
+    """metin: haber sayfasının tam metni (varsa). Yoksa yalnızca başlık ve kısa açıklamayla çalışır."""
+    s = _cagir(OZET_TALIMAT, f"Başlık: {baslik}\nKısa açıklama: {aciklama or '-'}\nHaber metni: {metin[:4000] or '-'}", True)
     if not isinstance(s, dict) or not s.get("baslik"):
         return None
-    return {"baslik": str(s["baslik"])[:70], "ozet": str(s.get("ozet", ""))[:260], "yer": str(s.get("yer", ""))[:60]}
+    return {"baslik": str(s["baslik"])[:75], "ozet": str(s.get("ozet", ""))[:700], "kisa": str(s.get("kisa", ""))[:220],
+            "yer": str(s.get("yer", ""))[:60]}
 
 
 def gunun_ozeti(basliklar):

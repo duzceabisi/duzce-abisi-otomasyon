@@ -115,6 +115,23 @@ def oku_html(site, url, desen, on_ek):
             yield {"site": site, "baslik": baslik, "link": on_ek + link, "zaman": None}
 
 
+def haber_metni(url):
+    """Haber sayfasının gövde metni (yapay zekâ ayrıntılı özet yazsın diye). Google yönlendirmesi ve hata -> boş."""
+    if "news.google.com" in url:
+        return ""
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=20) as r:
+            s = r.read().decode("utf-8", "replace")
+    except Exception:
+        return ""
+    s = re.sub(r"<script.*?</script>|<style.*?</style>|<aside.*?</aside>|<nav.*?</nav>|<footer.*?</footer>", " ", s, flags=re.S)
+    govde = s[s.find("articleBody"):] if "articleBody" in s else s
+    paragraflar = [html.unescape(re.sub(r"<[^>]+>", " ", p)) for p in re.findall(r"<p[^>]*>(.*?)</p>", govde, re.S)]
+    paragraflar = [re.sub(r"\s+", " ", p).strip() for p in paragraflar]
+    metin = " ".join(p for p in paragraflar if len(p) > 50 and "çerez" not in p.lower() and "yorum" not in p.lower()[:20])
+    return metin[:4000]
+
+
 def telegram(metin):
     token = ayar("TELEGRAM_BOT_TOKEN")
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
@@ -173,7 +190,7 @@ def telegram_album_url(urller, metin):
                                headers={"Content-Type": "application/json"}), timeout=90).read()
 
 
-AI_SINIRI = 8          # bir taramada önemli olmayan haberlerden en fazla bu kadarı yapay zekâyla özetlenir (ücretsiz kota)
+AI_SINIRI = 25         # bir taramada önemli olmayan haberlerden en fazla bu kadarı yapay zekâyla özetlenir (ücretsiz kota)
 _ai_sayac = {"n": 0}
 
 
@@ -185,13 +202,17 @@ def gonder_haber(g, simdi, kaydet=True):
     ust = sinif["etiket"] + ("  ·  🔴 ÖNEMLİ" if sinif["onemli"] else "")
     kaynaklar = "\n".join(f'📰 <a href="{html.escape(h["link"])}">{html.escape(h["site"])}</a>' for h in g["haberler"])
     ozet, baslik, yer = g.get("ozet", ""), ilk["baslik"], ""
+    kart_ozet = ozet
     if not ozet and (sinif["onemli"] or _ai_sayac["n"] < AI_SINIRI):  # kendi cümlelerimizle (ücretsiz Gemini)
         if not sinif["onemli"]:
             _ai_sayac["n"] += 1
         from ai import ozetle
-        y = ozetle(ilk["baslik"], next((h.get("aciklama") for h in g["haberler"] if h.get("aciklama")), ""))
+        # doğrudan erişilebilen kaynaktan haberin tam metni (Google yönlendirmeleri ve engelli siteler atlanır)
+        metin_ = next((m for m in (haber_metni(h["link"]) for h in sorted(g["haberler"], key=lambda h: "news.google" in h["link"])) if m), "")
+        y = ozetle(ilk["baslik"], next((h.get("aciklama") for h in g["haberler"] if h.get("aciklama")), ""), metin_)
         if y:
             baslik, ozet, yer = y["baslik"], y["ozet"], y["yer"]
+            kart_ozet = y.get("kisa") or ozet
     metin = (f"{ust}\n<b>{html.escape(baslik)}</b>\n" + (f"{html.escape(ozet)}\n" if ozet else "") + f"🕒 {saat}"
              + (f" · 📍 {html.escape(yer)}" if yer else "") + f"\n{kaynaklar}"
              + (f"\n<i>Kaynak başlığı: {html.escape(ilk['baslik'])}</i>" if baslik != ilk["baslik"] else ""))
@@ -202,7 +223,7 @@ def gonder_haber(g, simdi, kaydet=True):
         try:
             from haber_kart import KATEGORI, ciz_kart
             png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": baslik,
-                            "ozet": ozet, "yer": yer, "saat": saat},
+                            "ozet": kart_ozet, "yer": yer, "saat": saat},
                            KOK / "cikti" / "kartlar" / "son.png", hikaye=True)  # Instagram hikâyesi boyutu
             telegram_foto(png, metin)
             return
