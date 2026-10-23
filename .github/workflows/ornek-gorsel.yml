@@ -33,7 +33,7 @@ jobs:
               print("SECILEN", x["baslik"], x["link"])
               h.gonder_haber({"haberler": [x]}, datetime.now(h.TZ), kaydet=False)
           PY
-          python /tmp/o.py
+          PYTHONPATH=. python /tmp/o.py
           mkdir -p /tmp/sonuc && cp cikti/kartlar/son.png /tmp/sonuc/ 2>/dev/null; cp cikti/ozel/*.jpg /tmp/sonuc/ 2>/dev/null; ls /tmp/sonuc
       - uses: actions/upload-artifact@v4
         with:
