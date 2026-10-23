@@ -143,8 +143,50 @@ def paylas(ad, sayfalar, aciklama, simdi):
     subprocess.run([sys.executable, str(KOK / "gonder.py"), str(KOK / "cikti" / isim), aciklama[:1024]], check=True)
 
 
+def haber_kartlari(simdi, en_fazla=6):
+    """Önizleme için: son 24 saatin önemli haberlerini (yapay zekâ özetli hikâye kartı) yeniden gönderir."""
+    from haber_takip import gonder_haber
+    haberler = [h for h in son_gunler(oku_json("gunluk_haber.json"), 1, simdi) if h["onemli"]]
+    for h in sorted(haberler, key=lambda h: len(h["siteler"]), reverse=True)[:en_fazla]:
+        gonder_haber({"haberler": [{"site": s, "baslik": h["baslik"], "link": h["link"], "zaman": None} for s in h["siteler"]]},
+                     simdi, kaydet=False)
+
+
+def onizleme(simdi):
+    """Bir günün bütün paylaşımlarını saat sırasıyla hemen gönderir; hiçbir hafıza dosyasına yazmaz."""
+    import tempfile
+    import market as mk
+    from haber_takip import telegram, telegram_album_url, telegram_foto_url
+
+    def calistir(mod):
+        subprocess.run([sys.executable, str(KOK / "calistir.py"), mod, "--onizleme"], check=False)
+
+    adimlar = [("gunaydin", lambda: calistir("gunaydin")), ("burc", None), ("piyasa", lambda: calistir("piyasa")),
+               ("market", None), ("tarihte", None), ("is_ozet", None), ("haber_kartlari", lambda: haber_kartlari(simdi)),
+               ("eczane", lambda: calistir("eczane")), ("ozet", None), ("yarin", lambda: calistir("yarin")),
+               ("etkinlik_hafta", None)]
+    gorev = {ad: is_ for ad, _, _, _, is_ in GOREVLER}
+    for ad, ozel in adimlar:
+        try:
+            if ozel:
+                ozel()
+            elif ad == "market":  # gönderilmiş sayılanları da göstermek için geçici, boş bir hafıza kullan
+                mk.DURUM = Path(tempfile.mkdtemp()) / "market.json"
+                mk.market_kampanyalari(simdi, paylas, telegram, telegram_foto_url, telegram_album_url)
+            else:
+                sonuc = gorev[ad](simdi)
+                if sonuc:
+                    paylas(f"onizleme-{ad}", *sonuc, simdi)
+            print("önizleme:", ad)
+        except Exception as hata:
+            print(f"önizleme HATA {ad}: {hata}", file=sys.stderr)
+
+
 def main():
     simdi = datetime.now(TZ)
+    if len(sys.argv) > 1 and sys.argv[1] == "onizleme":
+        onizleme(simdi)
+        return
     durum = json.loads(DURUM.read_text(encoding="utf-8")) if DURUM.exists() else {}
     bugun = simdi.strftime("%Y-%m-%d")
     elle = sys.argv[1] if len(sys.argv) > 1 else None

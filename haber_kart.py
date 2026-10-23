@@ -8,7 +8,7 @@ Kaynak görselde yazmaz; Telegram mesajında metin olarak verilir.
 
 Haber sitelerinin fotoğrafları kullanılmaz (telif); kart, kategori rengi ve simgesiyle tasarlanır.
 """
-import html, json, subprocess, sys, tempfile
+import hashlib, html, json, subprocess, sys, tempfile
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -70,6 +70,23 @@ p{font-size:42px}
 """
 
 
+GORSEL_CSS = """
+.foto{position:absolute;inset:0;background-size:cover;background-position:center}
+.zemin{background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.15) 30%,rgba(0,0,0,.55) 55%,var(--koyu) 88%)!important}
+.simge{display:none}
+.temsili{position:absolute;right:64px;top:var(--temsili);font-size:20px;font-weight:600;color:rgba(255,255,255,.75);
+  background:rgba(0,0,0,.35);padding:6px 14px;border-radius:999px}
+"""
+
+
+def arkaplan(k):
+    """Kategoriye ait temsili arka plan (arkaplan/<kategori>-<n>.jpg); başlığa göre sabit ama karttan karta değişen seçim."""
+    adaylar = sorted((KOK / "arkaplan").glob(f"{k.get('kategori', 'genel')}-*.jpg")) or sorted((KOK / "arkaplan").glob("genel-*.jpg"))
+    if not adaylar:
+        return None
+    return adaylar[int(hashlib.md5(k["baslik"].encode()).hexdigest(), 16) % len(adaylar)]
+
+
 def kart_html(k, hikaye=False):
     etiket, simge, ana, koyu = KATEGORI.get(k.get("kategori"), KATEGORI["genel"])
     boy = 92 if len(k["baslik"]) < 45 else (80 if len(k["baslik"]) < 70 else 66)
@@ -78,8 +95,11 @@ def kart_html(k, hikaye=False):
     simdi = datetime.now(TZ)
     e = html.escape
     yer = f'<div class="yer">📍 {e(k["yer"])}</div>' if k.get("yer") else ""
-    return f"""<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{CSS}{HIKAYE_CSS if hikaye else ""}</style></head>
-<body style="--ana:{ana};--koyu:{koyu};--boy:{boy}px"><div class="zemin"></div><div class="simge">{simge}</div>
+    foto = arkaplan(k)
+    foto_html = (f'<div class="foto" style="background-image:url({foto.as_uri()})"></div>'
+                 f'<div class="temsili" style="--temsili:{300 if hikaye else 140}px">Temsili görsel</div>') if foto else ""
+    return f"""<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{CSS}{HIKAYE_CSS if hikaye else ""}{GORSEL_CSS if foto else ""}</style></head>
+<body style="--ana:{ana};--koyu:{koyu};--boy:{boy}px">{foto_html}<div class="zemin"></div><div class="simge">{simge}</div>
 <div class="ust"><div class="marka">DÜZCE <span>ABİSİ</span></div><div class="saat">{simdi.day} {AYLAR[simdi.month - 1]} · {e(k.get("saat", simdi.strftime("%H.%M")))}</div></div>
 <div class="ic"><div class="etiket">{simge} {etiket}</div><h1>{e(k["baslik"])}</h1><p>{e(k.get("ozet", ""))}</p>{yer}</div>
 <div class="alt"><span>Düzce'nin haber ve hizmet sayfası</span><span>Takip et → @duzceabisi</span></div></body></html>"""

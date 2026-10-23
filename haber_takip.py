@@ -173,7 +173,7 @@ def telegram_album_url(urller, metin):
                                headers={"Content-Type": "application/json"}), timeout=90).read()
 
 
-def gonder_haber(g, simdi):
+def gonder_haber(g, simdi, kaydet=True):
     """Kategoriye göre etiketli mesaj; önemli haberler tasarım kartıyla gider."""
     ilk = g["haberler"][0]
     saat = ilk["zaman"].strftime("%H.%M") if ilk["zaman"] else simdi.strftime("%H.%M")
@@ -189,7 +189,8 @@ def gonder_haber(g, simdi):
     metin = (f"{ust}\n<b>{html.escape(baslik)}</b>\n" + (f"{html.escape(ozet)}\n" if ozet else "") + f"🕒 {saat}"
              + (f" · 📍 {html.escape(yer)}" if yer else "") + f"\n{kaynaklar}"
              + (f"\n<i>Kaynak başlığı: {html.escape(ilk['baslik'])}</i>" if baslik != ilk["baslik"] else ""))
-    gunluk_kaydet(GUNLUK, {"baslik": ilk["baslik"], "kod": sinif["kod"], "etiket": sinif["etiket"], "onemli": sinif["onemli"],
+    if kaydet:
+        gunluk_kaydet(GUNLUK, {"baslik": ilk["baslik"], "kod": sinif["kod"], "etiket": sinif["etiket"], "onemli": sinif["onemli"],
                            "siteler": list(dict.fromkeys(h["site"] for h in g["haberler"])), "link": ilk["link"], "saat": saat}, simdi)
     if sinif["onemli"]:
         try:
