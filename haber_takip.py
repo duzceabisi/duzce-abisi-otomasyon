@@ -173,15 +173,21 @@ def telegram_album_url(urller, metin):
                                headers={"Content-Type": "application/json"}), timeout=90).read()
 
 
+AI_SINIRI = 8          # bir taramada önemli olmayan haberlerden en fazla bu kadarı yapay zekâyla özetlenir (ücretsiz kota)
+_ai_sayac = {"n": 0}
+
+
 def gonder_haber(g, simdi, kaydet=True):
-    """Kategoriye göre etiketli mesaj; önemli haberler tasarım kartıyla gider."""
+    """Her haber hikâye boyutunda görselli kartla gider; kategori etiketi ve kaynaklar mesaj metninde."""
     ilk = g["haberler"][0]
     saat = ilk["zaman"].strftime("%H.%M") if ilk["zaman"] else simdi.strftime("%H.%M")
     sinif = sinifla(ilk["baslik"])
     ust = sinif["etiket"] + ("  ·  🔴 ÖNEMLİ" if sinif["onemli"] else "")
     kaynaklar = "\n".join(f'📰 <a href="{html.escape(h["link"])}">{html.escape(h["site"])}</a>' for h in g["haberler"])
     ozet, baslik, yer = g.get("ozet", ""), ilk["baslik"], ""
-    if sinif["onemli"] and not ozet:  # önemli haberler yapay zekâyla kendi cümlelerimizle (ücretsiz Gemini)
+    if not ozet and (sinif["onemli"] or _ai_sayac["n"] < AI_SINIRI):  # kendi cümlelerimizle (ücretsiz Gemini)
+        if not sinif["onemli"]:
+            _ai_sayac["n"] += 1
         from ai import ozetle
         y = ozetle(ilk["baslik"], next((h.get("aciklama") for h in g["haberler"] if h.get("aciklama")), ""))
         if y:
@@ -192,7 +198,7 @@ def gonder_haber(g, simdi, kaydet=True):
     if kaydet:
         gunluk_kaydet(GUNLUK, {"baslik": ilk["baslik"], "kod": sinif["kod"], "etiket": sinif["etiket"], "onemli": sinif["onemli"],
                            "siteler": list(dict.fromkeys(h["site"] for h in g["haberler"])), "link": ilk["link"], "saat": saat}, simdi)
-    if sinif["onemli"]:
+    for deneme in range(2):  # her haber görselli gider; kart bir kez daha denenir
         try:
             from haber_kart import KATEGORI, ciz_kart
             png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": baslik,
@@ -200,9 +206,9 @@ def gonder_haber(g, simdi, kaydet=True):
                            KOK / "cikti" / "kartlar" / "son.png", hikaye=True)  # Instagram hikâyesi boyutu
             telegram_foto(png, metin)
             return
-        except Exception as hata:  # kart çizilemezse haber metin olarak yine gitsin
-            print("kart çizilemedi:", hata, file=sys.stderr)
-    telegram(metin)
+        except Exception as hata:
+            print(f"kart çizilemedi ({deneme + 1}. deneme):", hata, file=sys.stderr)
+    telegram(metin)  # iki denemede de kart çizilemezse haber kaybolmasın
 
 
 def main():

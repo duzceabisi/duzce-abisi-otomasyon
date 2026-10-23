@@ -26,7 +26,7 @@ KATEGORI = {
     "asayis": ("ASAYİŞ", "🚔", "#2B5BD7", "#142C6B"),
     "duyuru": ("DUYURU", "📢", "#0E3B2E", "#06201A"),
     "hava": ("HAVA UYARISI", "⛈️", "#3A6E8F", "#183447"),
-    "genel": ("SON DAKİKA", "📰", "#0E3B2E", "#06201A"),
+    "genel": ("GÜNDEM", "📰", "#0E3B2E", "#06201A"),
     "deprem": ("DEPREM", "🌍", "#8A3FD1", "#3B1460"),
     "okul": ("OKUL TATİLİ", "🏫", "#1F8A70", "#0B3B30"),
     "kayip": ("KAYIP", "🔎", "#C9A227", "#5A4708"),
@@ -34,7 +34,18 @@ KATEGORI = {
     "olum": ("ACI HABER", "🖤", "#4A4F4C", "#1C1F1D"),
     "firsat": ("FIRSAT", "⭐", "#1F8A70", "#0B3B30"),
     "findik": ("FINDIK FİYATI", "🌰", "#9A6324", "#3F2509"),
+    "yol": ("YOL ÇALIŞMASI", "🚧", "#E3B02D", "#5C4508"),
+    "vefat": ("VEFAT", "🕊️", "#4A4F4C", "#1C1F1D"),
+    "saglik": ("SAĞLIK", "🏥", "#2B8FD7", "#103A5C"),
+    "ekonomi": ("EKONOMİ", "💰", "#9A6324", "#3F2509"),
+    "is": ("İŞ / İSTİHDAM", "💼", "#2B5BD7", "#142C6B"),
+    "egitim": ("EĞİTİM", "🎓", "#1F8A70", "#0B3B30"),
+    "etkinlik": ("ETKİNLİK", "🎭", "#B03FD1", "#4A1460"),
+    "spor": ("SPOR", "⚽", "#1F8A70", "#0B3B30"),
+    "kurum": ("KURUM / BELEDİYE", "🏛️", "#0E3B2E", "#06201A"),
 }
+# Kendi arka plan görseli olmayan kategoriler kütüphanede en yakın kategoriyi kullanır
+ARKAPLAN_ESI = {"vefat": "olum", "egitim": "okul", "etkinlik": "firsat", "ekonomi": "findik", "duyuru": "genel"}
 
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@500;600;700;800&display=swap');
@@ -81,7 +92,9 @@ GORSEL_CSS = """
 
 def arkaplan(k):
     """Kategoriye ait temsili arka plan (arkaplan/<kategori>-<n>.jpg); başlığa göre sabit ama karttan karta değişen seçim."""
-    adaylar = sorted((KOK / "arkaplan").glob(f"{k.get('kategori', 'genel')}-*.jpg")) or sorted((KOK / "arkaplan").glob("genel-*.jpg"))
+    kat = k.get("kategori", "genel")
+    kat = ARKAPLAN_ESI.get(kat, kat)
+    adaylar = sorted((KOK / "arkaplan").glob(f"{kat}-*.jpg")) or sorted((KOK / "arkaplan").glob("genel-*.jpg"))
     if not adaylar:
         return None
     return adaylar[int(hashlib.md5(k["baslik"].encode()).hexdigest(), 16) % len(adaylar)]

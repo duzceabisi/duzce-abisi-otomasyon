@@ -104,10 +104,21 @@ def main():
 
     for i in yeni:  # 13:00 iş ilanları özeti için
         gunluk_kaydet(KOK / "durum" / "gunluk_is.json", i, simdi)
-    # Telegram mesajı 4096 karakterle sınırlı: 15'erli parçalar
-    for bas in range(0, len(yeni), 15):
-        parca = yeni[bas:bas + 15]
-        telegram(f"💼 <b>Düzce'de yeni iş ilanı ({len(yeni)})</b>\n\n" + "\n".join(satir(i) for i in parca))
+    if yeni:  # görselli: 7'şer ilanlık sayfalar, ilan bağlantıları açıklamada
+        import subprocess
+        satirlar = [[i["baslik"][:24], ", ".join(x for x in [i.get("firma"), i.get("yer"), f"{i['kisi']} kişi" if i.get("kisi") else "",
+                                                           f"son başvuru {i['son']}" if i.get("son") else ""] if x)] for i in yeni[:28]]
+        ad = f"is-{simdi:%Y%m%d-%H%M}"
+        veri = KOK / "veri" / f"{ad}.json"
+        veri.parent.mkdir(exist_ok=True)
+        veri.write_text(json.dumps({"tarih": f"{simdi.day}.{simdi.month}.{simdi.year}", "gun": "", "sayfalar": [
+            {"ad": f"is-{n // 7 + 1}", "etiket": "💼 Düzce iş ilanları", "baslik": "Yeni iş ilanı", "boy": 64,
+             "alt": f"{len(yeni)} yeni ilan · başvuru bilgileri açıklamada", "satirlar": satirlar[n:n + 7]}
+            for n in range(0, len(satirlar), 7)]}, ensure_ascii=False), encoding="utf-8")
+        subprocess.run([sys.executable, str(KOK / "ciz.py"), str(veri)], check=True, capture_output=True)
+        aciklama = (f"💼 Düzce'de {len(yeni)} yeni iş ilanı\n\n" + "\n".join(f"• {i['baslik']} — {i['link']}" for i in yeni[:10])
+                    + "\n\nKaynak: " + ", ".join(sorted({i["kaynak"] for i in yeni})))
+        subprocess.run([sys.executable, str(KOK / "gonder.py"), str(KOK / "cikti" / ad), aciklama[:1024]], check=True)
     DURUM.parent.mkdir(exist_ok=True)
     DURUM.write_text(json.dumps(durum, ensure_ascii=False), encoding="utf-8")
     print(f"{len(yeni)} yeni ilan; kayıtlı {len(durum['gorulen'])}")
