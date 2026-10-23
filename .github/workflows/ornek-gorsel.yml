@@ -1,0 +1,41 @@
+# Geçici: habere özel yapay zekâ görseli örneği (CPU, açık kaynak model). İş bitince silinecek.
+name: Ornek ozel gorsel
+on: workflow_dispatch
+jobs:
+  ornek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-lcm-dreamshaper-v7
+      - run: |
+          sudo apt-get install -y -qq fonts-noto-color-emoji >/dev/null 2>&1 || true
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q diffusers transformers accelerate
+      - env:
+          TZ: Europe/Istanbul
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GORSEL_MOTORU: yerel
+        run: |
+          cat > /tmp/o.py <<'PY'
+          import shutil, haber_takip as h
+          from datetime import datetime
+          haberler = list(h.oku("Düzce Hür Haber", "https://www.duzcehurhaber.com/rss")) + list(h.oku("Öncü TV", "https://www.oncurtv.com/rss"))
+          adaylar = [i for i in haberler if h.sinifla(i["baslik"])["onemli"] and h.sinifla(i["baslik"])["kod"] not in ("olum", "vefat")]
+          for x in (adaylar or haberler)[:2]:
+              print("SECILEN", x["baslik"], x["link"])
+              h.gonder_haber({"haberler": [x]}, datetime.now(h.TZ), kaydet=False)
+          PY
+          python /tmp/o.py
+          mkdir -p /tmp/sonuc && cp cikti/kartlar/son.png /tmp/sonuc/ 2>/dev/null; cp cikti/ozel/*.jpg /tmp/sonuc/ 2>/dev/null; ls /tmp/sonuc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ornek
+          path: /tmp/sonuc
