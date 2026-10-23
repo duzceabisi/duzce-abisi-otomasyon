@@ -111,6 +111,9 @@ html,body{width:1080px;height:1920px}
 body,body.kapak,body.gun,body.vefatsayfa{background:#0B1310;color:#F5EFE3}
 .bg{position:absolute;inset:0;background-size:cover;background-position:center}
 .ort{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,14,11,.80) 0%,rgba(6,14,11,.58) 22%,rgba(6,14,11,.72) 50%,rgba(6,14,11,.82) 78%,rgba(6,14,11,.94) 100%)}
+.bg:not([style]){background:radial-gradient(ellipse at 85% 8%,rgba(227,155,45,.26) 0,transparent 50%),
+  radial-gradient(ellipse at 5% 95%,rgba(31,122,77,.45) 0,transparent 60%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 2px,transparent 2px 26px),#0B1310}
 .yildiz .bg{background:radial-gradient(circle at 20% 15%,rgba(255,255,255,.9) 0 2px,transparent 3px),radial-gradient(circle at 70% 8%,rgba(255,255,255,.7) 0 2px,transparent 3px),
   radial-gradient(circle at 85% 30%,rgba(255,255,255,.8) 0 1.5px,transparent 2.5px),radial-gradient(circle at 40% 40%,rgba(255,255,255,.6) 0 1.5px,transparent 2.5px),
   radial-gradient(ellipse at 50% 0%,#3B2470 0%,#14102E 55%,#070611 100%)}
@@ -144,7 +147,7 @@ td:first-child,.bolum{color:#fff}td.satis{color:#E39B2D}
 """
 
 # sayfa adı -> arka plan kategorisi (arkaplan/<kategori>-<n>.jpg); "yildiz" = çizimle yıldızlı gökyüzü
-ARKA = {"hava": "genel", "piyasa": "genel", "akaryakit": "genel", "eczane": "genel", "namaz": "genel-3", "kesinti": "kesinti",
+ARKA = {"hava": "genel", "piyasa": "genel", "akaryakit": "genel", "eczane": "genel", "namaz": "genel", "kesinti": "kesinti",
         "vefat": "olum", "burc": "yildiz", "tarih": "genel", "ozel": "genel", "ozet": "genel", "is": "genel",
         "etkinlik": "firsat", "bim": "firsat", "kapak": "genel", "gun": "genel"}
 

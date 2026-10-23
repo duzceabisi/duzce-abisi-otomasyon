@@ -4,7 +4,7 @@ Sürekli açık bir bilgisayarda (macOS ya da Linux) bütün sistemi çalıştı
 
 - Ev interneti engellenmez: Düzce Postası, Parantez, Damla, Oxijen, Düzce'nin Sesi ve A101 afişleri doğrudan okunur.
 - Günlük paylaşımlar tam saatinde gider (GitHub 30-45 dk geciktiriyordu); haberler 5 dakikada bir taranır.
-- Her habere özel yapay zekâ görseli bilgisayarda ücretsiz üretilir (Apple çip ya da NVIDIA kartla birkaç saniye).
+- İstenirse habere özel yapay zekâ görseli de üretilebilir (varsayılan kapalı; ücretsiz model bazen yanlış çiziyor).
 
 ## Kurulum (bir kez)
 
@@ -17,7 +17,7 @@ Sürekli açık bir bilgisayarda (macOS ya da Linux) bütün sistemi çalıştı
    ```
    Betik Telegram ve Gemini anahtarlarını sorar (ekrana yazılmaz), bir deneme turu yapar (Telegram'a göndermez)
    ve programı bilgisayar açılınca kendiliğinden başlayan bir servis olarak kurar.
-   Görsel modeli istemiyorsanız: `bash yerel/kur.sh --gorselsiz`
+   Kurulum yapay zekâ görsel modelini indirmez (önerilen). Denemek isterseniz: `bash yerel/kur.sh --gorselli`
 3. Bilgisayar uykuya geçmemeli (macOS: Sistem Ayarları > Enerji; ya da `sudo pmset -a sleep 0`).
 4. Yerel sunucu çalışınca GitHub'daki zamanlanmış işleri kapatın (aynı haber iki kez gitmesin):
    ```bash
@@ -39,7 +39,7 @@ Sürekli açık bir bilgisayarda (macOS ya da Linux) bütün sistemi çalıştı
 | `yerel` | Bilgisayardaki açık kaynak model habere özel görsel üretir | Ücretsiz |
 | `openai` | OpenAI görsel API'si (`OPENAI_API_KEY`, hesapta kredi gerekir) | Görsel başına ücretli |
 | `gemini` | Gemini görsel API'si (projede faturalandırma açık olmalı) | Görsel başına ücretli |
-| boş | Habere özel görsel yok; hazır görsel kütüphanesi kullanılır | Ücretsiz |
+| boş (varsayılan) | Habere özel görsel yok; seçilmiş görsel kütüphanesi ve kurumsal zemin kullanılır | Ücretsiz |
 
 Not: ChatGPT ve Gemini'nin web sitelerini (Pro üyelik) programla kullanmak kullanım şartlarına aykırıdır ve
 hesabın kapatılmasına yol açabilir; bu yüzden sistem yalnızca resmi API'leri ya da yerel modeli kullanır.

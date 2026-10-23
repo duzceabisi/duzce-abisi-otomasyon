@@ -26,7 +26,7 @@ KATEGORI = {
     "asayis": ("ASAYİŞ", "🚔", "#2B5BD7", "#142C6B"),
     "duyuru": ("DUYURU", "📢", "#0E3B2E", "#06201A"),
     "hava": ("HAVA UYARISI", "⛈️", "#3A6E8F", "#183447"),
-    "genel": ("GÜNDEM", "📰", "#0E3B2E", "#06201A"),
+    "genel": ("GÜNDEM", "🏙️", "#0E3B2E", "#06201A"),
     "deprem": ("DEPREM", "🌍", "#8A3FD1", "#3B1460"),
     "okul": ("OKUL TATİLİ", "🏫", "#1F8A70", "#0B3B30"),
     "kayip": ("KAYIP", "🔎", "#C9A227", "#5A4708"),
@@ -94,7 +94,7 @@ def arkaplan(k):
     """Kategoriye ait temsili arka plan (arkaplan/<kategori>-<n>.jpg); başlığa göre sabit ama karttan karta değişen seçim."""
     kat = k.get("kategori", "genel")
     kat = ARKAPLAN_ESI.get(kat, kat)
-    adaylar = sorted((KOK / "arkaplan").glob(f"{kat}-*.jpg")) or sorted((KOK / "arkaplan").glob("genel-*.jpg"))
+    adaylar = sorted((KOK / "arkaplan").glob(f"{kat}-*.jpg"))  # yoksa görselsiz kurumsal kart (kategori rengi + simge)
     if not adaylar:
         return None
     return adaylar[int(hashlib.md5(k["baslik"].encode()).hexdigest(), 16) % len(adaylar)]

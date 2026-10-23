@@ -20,7 +20,7 @@ jobs:
     # Yerel sunucu devredeyken (depo değişkeni CALISMA_YERI=yerel) zamanlanmış çalışmalar atlanır; elle başlatma yine çalışır
     if: github.event_name != 'schedule' || vars.CALISMA_YERI != 'yerel'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -35,6 +35,7 @@ jobs:
           key: haber-durum-${{ github.run_id }}
           restore-keys: haber-durum-
       - name: Tara ve gönder
+        timeout-minutes: 42   # aşılırsa bile hafıza adımı çalışsın (tekrar gönderim olmasın)
         env:
           TZ: Europe/Istanbul
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -45,6 +46,7 @@ jobs:
           # (elle bir görev ya da önizleme istenirse tek tur)
           TUR=6; [ -n "${{ inputs.gorev }}" ] && TUR=1
           for i in $(seq 1 $TUR); do
+            if [ $SECONDS -gt 1920 ]; then echo "süre doldu, kalan turlar sonraki çalışmada"; break; fi
             echo "=== tur $i/$TUR $(date +%H:%M)"
             python haber_takip.py || echo "::error::haber_takip başarısız"
             python is_ilanlari.py || echo "::error::is_ilanlari başarısız"

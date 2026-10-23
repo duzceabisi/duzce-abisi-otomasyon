@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Düzce Abisi yerel sunucu kurulumu (macOS ya da Linux). Tek komut:
-#   bash yerel/kur.sh              tam kurulum (habere özel yapay zekâ görseli dahil)
-#   bash yerel/kur.sh --gorselsiz  görsel modeli kurmadan (kartlar hazır görsel kütüphanesini kullanır)
+#   bash yerel/kur.sh              kurulum (önerilen)
+#   bash yerel/kur.sh --gorselli   yerel görsel modelini de kurar (~2 GB; varsayılan: kurulmaz)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 KOK="$(pwd)"
-GORSEL=1; [ "${1:-}" = "--gorselsiz" ] && GORSEL=0
+GORSEL=0; [ "${1:-}" = "--gorselli" ] && GORSEL=1
 echo "== Düzce Abisi kurulumu: $KOK"
 
 # Görsel modeli (torch) en yeni Python sürümlerini hemen desteklemiyor: 3.12 / 3.13 / 3.11 tercih edilir
@@ -42,20 +42,10 @@ if [ ! -f .env ]; then
   printf 'TELEGRAM_BOT_TOKEN=%s\nTELEGRAM_CHAT_ID=%s\nGEMINI_API_KEY=%s\n' "$TG" "$CHAT" "$GEM" > .env
   chmod 600 .env
 fi
-# Habere özel görsel: bu makinede yeterince hızlıysa (3 dk içinde bir görsel) aç, değilse hazır kütüphaneyi kullan
-if ! grep -q '^GORSEL_MOTORU=' .env; then
-  MOTOR=""
-  if [ $GORSEL = 1 ]; then
-    echo "== Görsel hız testi (ilk seferde model indirilir, ~2 GB)"
-    .venv/bin/python -c "from huggingface_hub import snapshot_download as s; s('SimianLuo/LCM_Dreamshaper_v7')" >/dev/null 2>&1 || true
-    if GORSEL_MOTORU=yerel perl -e 'alarm shift; exec @ARGV' 180 .venv/bin/python gorsel.py "quiet town street at dusk, warm lights" >/dev/null 2>&1; then
-      MOTOR=yerel; echo "   hızlı: habere özel görsel AÇIK"
-    else
-      echo "   yavaş ya da hata: habere özel görsel KAPALI (hazır görsel kütüphanesi kullanılacak)"
-    fi
-  fi
-  echo "GORSEL_MOTORU=$MOTOR" >> .env
-fi
+# Habere özel yapay zekâ görseli varsayılan olarak KAPALI: ücretsiz yerel model olayları yanlış çizebiliyor
+# (fındığı soğan gibi, Düzce'yi şato gibi). Kartlar seçilmiş görsel kütüphanesi ve kurumsal zeminle çizilir.
+# Açmak için .env içinde GORSEL_MOTORU=yerel yazın (bkz. BENIOKU.md).
+grep -q '^GORSEL_MOTORU=' .env || echo "GORSEL_MOTORU=" >> .env
 
 echo "== Deneme turu (Telegram'a gönderilmez)"
 DENEME=1 .venv/bin/python yerel/dongu.py --bir-tur || true

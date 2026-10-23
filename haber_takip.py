@@ -55,6 +55,22 @@ HTML_KAYNAKLAR = [
     ("Düzce Manşet", "https://duzcemanset.com.tr/",
      r'<a href="(https://duzcemanset\.com\.tr/[a-z0-9-]+-\d+)">\s*<img[^>]*alt="([^"]+)"', ""),
 ]
+ILLER = ("adana adıyaman afyon ağrı amasya ankara antalya artvin balıkesir bilecik bingöl bitlis burdur bursa "
+         "çanakkale çankırı çorum denizli diyarbakır edirne elazığ erzincan erzurum eskişehir gaziantep giresun gümüşhane "
+         "hakkari hatay ısparta mersin istanbul izmir kars kastamonu kayseri kırklareli kırşehir kocaeli konya kütahya malatya "
+         "manisa kahramanmaraş mardin muğla muş nevşehir niğde ordu rize sakarya samsun siirt sinop sivas tekirdağ tokat "
+         "trabzon tunceli şanlıurfa uşak van yozgat zonguldak aksaray bayburt karaman kırıkkale batman şırnak bartın ardahan "
+         "ığdır yalova karabük kilis osmaniye").split()
+BASKA_IL = re.compile(r"\b(" + "|".join(ILLER) + r")(?:['’]|\b)(?!\s*(?:cad|sok|bulv|mah|yolu|kavş))")  # "İstanbul Caddesi" Düzce'de
+DUZCE = re.compile(r"düzce|akçakoca|cumayeri|çilimli|gölyaka|gümüşova|kaynaşlı|yığılca|konuralp|beyciler|efteni|melen")
+
+
+def duzce_disi(h):
+    """Başka bir il açıkça geçiyor, Düzce hiç geçmiyorsa haber Düzce'nin değildir (Kahramanmaraş'ta ceset, Zonguldak'ta kaza)."""
+    t = f"{h['baslik']} {h.get('aciklama', '')}".replace("İ", "i").replace("I", "ı").lower()
+    return not DUZCE.search(t) and bool(BASKA_IL.search(t))
+
+
 HABER_DEGIL = re.compile(r"ihale|alım işi|yapım işi|satış ilanı|kiralama ilanı", re.I)  # ilanlar haber değil
 DOLGU = {"ve", "ile", "de", "da", "bir", "bu", "için", "olan", "oldu", "düzce", "düzcede", "düzceli", "sonra", "son", "dakika"}
 
@@ -259,6 +275,9 @@ def gonder_haber(g, simdi, kaydet=True):
         # doğrudan erişilebilen kaynaktan haberin tam metni (Google yönlendirmeleri ve engelli siteler atlanır)
         metin_ = next((m for m in (haber_metni(h["link"]) for h in sorted(g["haberler"], key=lambda h: "news.google" in h["link"])) if m), "")
         y = ozetle(ilk["baslik"], next((h.get("aciklama") for h in g["haberler"] if h.get("aciklama")), ""), metin_)
+        if y and not y["duzce"]:  # yapay zekâ tam metni okudu: Düzce'yle ilgisi yok
+            print("Düzce dışı, gönderilmedi:", ilk["baslik"])
+            return False
         if y:
             baslik, ozet, yer = y["baslik"], y["ozet"], y["yer"]
             kart_ozet = y.get("kisa") or ozet
@@ -281,10 +300,11 @@ def gonder_haber(g, simdi, kaydet=True):
                             "ozet": kart_ozet, "yer": yer, "saat": saat, "foto": str(foto) if foto else ""},
                            KOK / "cikti" / "kartlar" / "son.png", hikaye=True)  # Instagram hikâyesi boyutu
             telegram_foto(png, metin)
-            return
+            return True
         except Exception as hata:
             print(f"kart çizilemedi ({deneme + 1}. deneme):", hata, file=sys.stderr)
     telegram(metin)  # iki denemede de kart çizilemezse haber kaybolmasın
+    return True
 
 
 OLAY_SAKLA = timedelta(hours=48)
@@ -336,7 +356,7 @@ def main():
                     durum["linkler"][h["link"]] = simdi.strftime("%Y-%m-%d %H:%M")
                     continue
                 durum["linkler"][h["link"]] = simdi.strftime("%Y-%m-%d %H:%M")
-                if ilk_kez or (h["zaman"] and simdi - h["zaman"] > EN_ESKI):
+                if ilk_kez or (h["zaman"] and simdi - h["zaman"] > EN_ESKI) or duzce_disi(h):
                     continue
                 yeni.append(h)
             if ilk_kez:
@@ -382,8 +402,8 @@ def main():
                  f"Bundan sonra çıkan her yeni haber buraya gelecek.")
     else:
         for g in gruplar:
-            gonder_haber(g, simdi)
-            print("gönderildi:", g["haberler"][0]["baslik"])
+            if gonder_haber(g, simdi):
+                print("gönderildi:", g["haberler"][0]["baslik"])
 
     for g in gruplar:
         durum["basliklar"].append([" ".join(sorted(g["kelimeler"])), simdi.strftime("%Y-%m-%d %H:%M")])
