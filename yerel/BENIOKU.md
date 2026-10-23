@@ -6,7 +6,30 @@ Sürekli açık bir bilgisayarda (macOS ya da Linux) bütün sistemi çalıştı
 - Günlük paylaşımlar tam saatinde gider (GitHub 30-45 dk geciktiriyordu); haberler 5 dakikada bir taranır.
 - İstenirse habere özel yapay zekâ görseli de üretilebilir (varsayılan kapalı; ücretsiz model bazen yanlış çiziyor).
 
-## Kurulum (bir kez)
+## Kurulum — Windows 10/11 (bir kez)
+
+1. Başlat menüsünde "PowerShell" açın ve Git'i kurun (Python ve Chrome yoksa kurulum betiği kendisi sorar):
+   ```
+   winget install -e --id Git.Git
+   ```
+   Pencereyi kapatıp yeni bir PowerShell açın.
+2. Programı indirin:
+   ```
+   git clone https://github.com/duzceabisi/duzce-abisi-otomasyon.git $HOME\duzce-abisi
+   ```
+3. Dosya Gezgini'nde `duzce-abisi\yerel\windows-kur.bat` dosyasına çift tıklayın. Telegram ve Gemini anahtarlarını
+   sorar (yazarken görünmez), Telegram'a göndermeden bir deneme turu yapar ve botu "DuzceAbisiBot" adlı, Windows'ta
+   oturum açılınca kendiliğinden başlayan penceresiz bir görev olarak kurar.
+4. Bilgisayarın ayarları:
+   - Ayarlar > Sistem > Güç: ekran kapanabilir ama **uyku "Hiçbir zaman"** olmalı.
+   - Elektrik kesintisi ya da güncelleme sonrası yeniden başlayınca bot, oturum açılınca başlar. Bilgisayar başında kimse
+     yoksa otomatik oturum açmayı kurun (Microsoft'un ücretsiz "Autologon" aracı ya da `netplwiz`).
+   - Ayarlar > Windows Update > Etkin saatler: gece yeniden başlatmalar botu kısa süre durdurabilir.
+5. Kayıtlar: `duzce-abisi\kayit\dongu.log`. Durdurma: `schtasks /End /TN DuzceAbisiBot`;
+   kaldırma: `schtasks /Delete /TN DuzceAbisiBot /F`.
+6. Bot çalışınca GitHub'daki zamanlanmış işleri kapatın (aşağıdaki 4. madde; bunu bize söylemeniz yeterli).
+
+## Kurulum — macOS ya da Linux (bir kez)
 
 1. Gerekenler: Python 3, git, Google Chrome (Linux'ta chromium + `fonts-noto-color-emoji`).
 2. Terminalde:
