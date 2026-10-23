@@ -16,7 +16,7 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from gonder import ayar, cok_parcali
+from gonder import ayar, cok_parcali, deneme_modu
 from kategori import sinifla
 
 KOK = Path(__file__).resolve().parent
@@ -133,6 +133,8 @@ def haber_metni(url):
 
 
 def telegram(metin):
+    if deneme_modu():
+        print("[DENEME] telegram:", str(metin)[:90].replace("\n", " ")); return
     token = ayar("TELEGRAM_BOT_TOKEN")
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
         veri = json.dumps({"chat_id": chat.strip(), "text": metin, "parse_mode": "HTML",
@@ -143,6 +145,8 @@ def telegram(metin):
 
 
 def telegram_foto(png, metin):
+    if deneme_modu():
+        print("[DENEME] telegram:", str(png)[:90].replace("\n", " ")); return
     token = ayar("TELEGRAM_BOT_TOKEN")
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
         govde, tur = cok_parcali({"chat_id": chat.strip(), "caption": metin, "parse_mode": "HTML"}, {"photo": Path(png)})
@@ -166,6 +170,9 @@ def gunluk_kaydet(dosya, kayit, simdi, sakla_gun=8):
 
 def telegram_foto_url(url, metin):
     """İnternetteki bir görseli (ör. marketin resmi afişi) Telegram'a gönderir; olmazsa dosya olarak gönderir."""
+    if deneme_modu():
+        print("[DENEME] telegram:", str(url)[:90].replace("\n", " ")); return
+
     token = ayar("TELEGRAM_BOT_TOKEN")
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
         for yontem, alan in (("sendPhoto", "photo"), ("sendDocument", "document")):
@@ -181,6 +188,9 @@ def telegram_foto_url(url, metin):
 
 def telegram_album_url(urller, metin):
     """İnternetteki görselleri (ör. BİM afişleri) tek albüm olarak gönderir; açıklama ilk görselde."""
+    if deneme_modu():
+        print("[DENEME] telegram:", str(urller)[:90].replace("\n", " ")); return
+
     token = ayar("TELEGRAM_BOT_TOKEN")
     medya = [{"type": "photo", "media": u} for u in urller[:10]]
     medya[0].update({"caption": metin, "parse_mode": "HTML"})
@@ -202,7 +212,7 @@ def gonder_haber(g, simdi, kaydet=True):
     ust = sinif["etiket"] + ("  ·  🔴 ÖNEMLİ" if sinif["onemli"] else "")
     kaynaklar = "\n".join(f'📰 <a href="{html.escape(h["link"])}">{html.escape(h["site"])}</a>' for h in g["haberler"])
     ozet, baslik, yer = g.get("ozet", ""), ilk["baslik"], ""
-    kart_ozet = ozet
+    kart_ozet, sahne = ozet, ""
     if not ozet and (sinif["onemli"] or _ai_sayac["n"] < AI_SINIRI):  # kendi cümlelerimizle (ücretsiz Gemini)
         if not sinif["onemli"]:
             _ai_sayac["n"] += 1
@@ -213,6 +223,7 @@ def gonder_haber(g, simdi, kaydet=True):
         if y:
             baslik, ozet, yer = y["baslik"], y["ozet"], y["yer"]
             kart_ozet = y.get("kisa") or ozet
+            sahne = y.get("sahne", "")
     metin = (f"{ust}\n<b>{html.escape(baslik)}</b>\n" + (f"{html.escape(ozet)}\n" if ozet else "") + f"🕒 {saat}"
              + (f" · 📍 {html.escape(yer)}" if yer else "") + f"\n{kaynaklar}"
              + (f"\n<i>Kaynak başlığı: {html.escape(ilk['baslik'])}</i>" if baslik != ilk["baslik"] else ""))
@@ -222,8 +233,10 @@ def gonder_haber(g, simdi, kaydet=True):
     for deneme in range(2):  # her haber görselli gider; kart bir kez daha denenir
         try:
             from haber_kart import KATEGORI, ciz_kart
+            from gorsel import habere_ozel
+            foto = habere_ozel(sahne, sinif["kod"]) if deneme == 0 else None  # yalnızca yerel sunucuda (GORSEL_MOTORU)
             png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": baslik,
-                            "ozet": kart_ozet, "yer": yer, "saat": saat},
+                            "ozet": kart_ozet, "yer": yer, "saat": saat, "foto": str(foto) if foto else ""},
                            KOK / "cikti" / "kartlar" / "son.png", hikaye=True)  # Instagram hikâyesi boyutu
             telegram_foto(png, metin)
             return

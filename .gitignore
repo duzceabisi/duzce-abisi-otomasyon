@@ -3,3 +3,5 @@ cikti/
 veri/test-*.json
 __pycache__/
 durum/
+.venv/
+kayit/

@@ -22,6 +22,11 @@ def ayar(ad):
     sys.exit(f"{ad} bulunamadı (.env ya da ortam değişkeni)")
 
 
+def deneme_modu():
+    """DENEME=1: Telegram'a gönderme, ne gönderileceğini yazdır (kurulum ve test için)."""
+    return os.environ.get("DENEME") == "1"
+
+
 def cok_parcali(alanlar, dosyalar):
     sinir = uuid.uuid4().hex
     govde = b""
@@ -38,6 +43,9 @@ def gonder(klasor, aciklama):
     pngler = sorted(Path(klasor).glob("*.png"))
     if not pngler:
         sys.exit(f"{klasor} içinde PNG yok")
+    if deneme_modu():
+        print(f"[DENEME] albüm: {len(pngler)} görsel ({klasor}) | {aciklama[:80]!r}")
+        return
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
         for bas in range(0, len(pngler), 10):  # Telegram albümü en fazla 10 görsel alır
             grup = pngler[bas:bas + 10]

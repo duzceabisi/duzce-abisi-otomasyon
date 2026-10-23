@@ -23,7 +23,10 @@ OZET_TALIMAT = (
     "cümlenle yaz. Abartısız, sade Türkçe; büyük harfle bağırma, ünlem kullanma. JSON döndür: "
     "{\"baslik\": en fazla 60 karakter, yer adını içersin, doğru ve dikkat çekici; \"ozet\": 3-4 cümle; "
     "\"kisa\": özetin karta sığacak en fazla 170 karakterlik hali (en önemli ayrıntılar: ne, nerede, sonuç); "
-    "\"yer\": ilçe ve varsa mahalle/köy (ör. 'Gümüşova, Dededüzü köyü'), yoksa boş metin}")
+    "\"yer\": ilçe ve varsa mahalle/köy (ör. 'Gümüşova, Dededüzü köyü'), yoksa boş metin; "
+    "\"sahne\": haberi temsil eden görsel için İNGİLİZCE kısa sahne tarifi (en fazla 40 kelime): mekân, ışık, atmosfer, "
+    "nesneler; insan yüzü, yazı, logo, kan ya da ceset YOK; olayın kendisini değil ortamını anlat (ör. 'rural mountain road "
+    "after landslide, muddy asphalt, road workers machinery in distance, overcast morning')}")
 GUN_TALIMAT = (
     "Düzce'nin yerel haber sayfası 'Düzce Abisi' için günün kısa özetini yazıyorsun. Sana bugünün haber başlıkları "
     "verilecek. Yalnızca bu başlıklardaki bilgiyi kullan; başlıkta olmayan sebep, sonuç ya da ayrıntı EKLEME. Günün öne çıkanlarını 3-4 akıcı cümlede, "
@@ -56,7 +59,7 @@ def ozetle(baslik, aciklama="", metin=""):
     if not isinstance(s, dict) or not s.get("baslik"):
         return None
     return {"baslik": str(s["baslik"])[:75], "ozet": str(s.get("ozet", ""))[:700], "kisa": str(s.get("kisa", ""))[:220],
-            "yer": str(s.get("yer", ""))[:60]}
+            "yer": str(s.get("yer", ""))[:60], "sahne": str(s.get("sahne", ""))[:400]}
 
 
 def gunun_ozeti(basliklar):

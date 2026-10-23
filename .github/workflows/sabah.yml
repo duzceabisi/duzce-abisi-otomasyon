@@ -21,6 +21,8 @@ on:
 
 jobs:
   paylas:
+    # Yerel sunucu devredeyken (depo değişkeni CALISMA_YERI=yerel) zamanlanmış çalışmalar atlanır; elle başlatma yine çalışır
+    if: github.event_name != 'schedule' || vars.CALISMA_YERI != 'yerel'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

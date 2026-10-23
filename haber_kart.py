@@ -108,7 +108,7 @@ def kart_html(k, hikaye=False):
     simdi = datetime.now(TZ)
     e = html.escape
     yer = f'<div class="yer">📍 {e(k["yer"])}</div>' if k.get("yer") else ""
-    foto = arkaplan(k)
+    foto = Path(k["foto"]) if k.get("foto") and Path(k["foto"]).exists() else arkaplan(k)  # habere özel görsel varsa o
     foto_html = (f'<div class="foto" style="background-image:url({foto.as_uri()})"></div>'
                  f'<div class="temsili" style="--temsili:{300 if hikaye else 140}px">Temsili görsel</div>') if foto else ""
     return f"""<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{CSS}{HIKAYE_CSS if hikaye else ""}{GORSEL_CSS if foto else ""}</style></head>

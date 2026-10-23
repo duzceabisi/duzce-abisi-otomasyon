@@ -4,7 +4,7 @@
 zamanli.py her gün 10:00'da market_kampanyalari() çağırır; her kampanya bir kez gönderilir.
   BİM   bim.com.tr          O gün başlayan aktüel ve haftalık indirim dönemlerinin resmi afişleri (albüm)
   ŞOK   kurumsal.sokmarket  Resmi "Haftanın Fırsatları" / "Hafta Sonu" afişi (afişin kendisi)
-  A101  (kapalı)            a101.com.tr sunucuyu engelliyor, afişler tarayıcıda yükleniyor; görsel alınamıyor
+  A101  a101.com.tr          Resmi kampanya afişleri; yalnızca yerel sunucuda (ev interneti + Chrome)
 """
 import html, json, re, urllib.parse, urllib.request
 from datetime import datetime, timedelta
@@ -97,6 +97,28 @@ def sok_afisler():
         yield {"url": SOK + yol, "baslik": f"ŞOK {tur}" + (f" ({aralik.group(1)} {AYLAR[datetime.now(TZ).month - 1]})" if aralik else "")}
 
 
+def a101_afisler():
+    """A101 kampanya afişleri. a101.com.tr veri merkezi adreslerini (GitHub) engelliyor ve afişleri tarayıcıda
+    yüklüyor; bu yüzden yalnızca yerel sunucuda (ev interneti) Chrome ile sayfa çizdirilerek alınır.
+    Sayfa bir doğrulama ekranı gösterirse hiçbir şey alınmaz (aşılmaya çalışılmaz)."""
+    import subprocess
+    from ciz import CHROME
+    dom = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--virtual-time-budget=12000",
+                          f"--user-agent={UA['User-Agent']}", "--dump-dom", "https://www.a101.com.tr/"],
+                         capture_output=True, text=True, timeout=90).stdout
+    if "Just a moment" in dom[:3000] or len(dom) < 50000:
+        raise RuntimeError("A101 sayfası açılmadı (doğrulama ekranı ya da erişim yok)")
+    gorulen = {}
+    for alt, src in re.findall(r'<img[^>]*alt="([^"]*kampanya afişi[^"]*)"[^>]*src="([^"]+)"', dom) + \
+            [(a, s_) for s_, a in re.findall(r'<img[^>]*src="([^"]+)"[^>]*alt="([^"]*kampanya afişi[^"]*)"', dom)]:
+        if "cdn2.a101.com.tr" in src:
+            gorulen.setdefault(src, html.unescape(alt).replace("geçerli A101 kampanya afişi", "").strip())
+    gruplar = {}
+    for src, donem in gorulen.items():
+        gruplar.setdefault(donem, []).append(src)
+    return gruplar  # {"17-23 Ekim": [afiş adresleri], ...}
+
+
 def a101_haberleri():
     q = urllib.parse.quote("A101 aktüel")
     s = getir(f"https://news.google.com/rss/search?q={q}+when:2d&hl=tr&gl=TR&ceid=TR:tr")
@@ -135,7 +157,18 @@ def market_kampanyalari(simdi, paylas, telegram, telegram_foto_url, telegram_alb
     except Exception as hata:
         print("ŞOK hatası:", hata)
 
-    # A101: afiş görseli sunucudan güvenilir şekilde alınamıyor; görselsiz bildirim istenmediği için kapalı.
+    try:  # A101: yalnızca yerel sunucuda çalışır (bkz. a101_afisler); GitHub'da hata verir ve atlanır
+        for donem, afisler in a101_afisler().items():
+            yeni = [u for u in afisler if f"a101:{u}" not in g]
+            if not yeni:
+                continue
+            telegram_album_url(yeni[:10], f"🛒 <b>A101 kampanya afişleri — {html.escape(donem)}</b>\n\n"
+                                          f"Stoklarla sınırlıdır.\nKaynak: A101 (resmi afiş)\n\n#düzce #a101 #aktüel #düzceabisi")
+            for u in yeni:
+                g[f"a101:{u}"] = bugun
+            say += 1
+    except Exception as hata:
+        print("A101 atlandı:", hata)
 
     sinir = (simdi - timedelta(days=21)).strftime("%Y-%m-%d")
     durum["gonderilen"] = {k: v for k, v in g.items() if v >= sinir}
