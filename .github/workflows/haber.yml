@@ -40,6 +40,7 @@ jobs:
           TZ: Europe/Istanbul
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SESSIZ_YOK: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}   # elle başlatılan çalışma sessiz saatte de gönderir
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           # GitHub zamanlanmış işleri ~30 dk'da bir başlatıyor; her çalışmada 5 dk arayla 6 tur tarama yapılır

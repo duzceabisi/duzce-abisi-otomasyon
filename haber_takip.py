@@ -16,7 +16,7 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from gonder import ayar, cok_parcali, deneme_modu
+from gonder import ayar, cok_parcali, deneme_modu, sessiz_saat
 from kategori import sinifla
 
 KOK = Path(__file__).resolve().parent
@@ -188,6 +188,8 @@ def haber_metni(url):
 def telegram(metin):
     if deneme_modu():
         print("[DENEME] telegram:", str(metin)[:90].replace("\n", " ")); return
+    if sessiz_saat():
+        print("[SESSİZ SAAT] gönderilmedi:", str(metin)[:90].replace("\n", " ")); return
     token = ayar("TELEGRAM_BOT_TOKEN")
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
         veri = json.dumps({"chat_id": chat.strip(), "text": metin, "parse_mode": "HTML",
@@ -200,6 +202,8 @@ def telegram(metin):
 def telegram_foto(png, metin):
     if deneme_modu():
         print("[DENEME] telegram:", str(png)[:90].replace("\n", " ")); return
+    if sessiz_saat():
+        print("[SESSİZ SAAT] gönderilmedi:", str(png)[:90].replace("\n", " ")); return
     token = ayar("TELEGRAM_BOT_TOKEN")
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
         govde, tur = cok_parcali({"chat_id": chat.strip(), "caption": metin, "parse_mode": "HTML"}, {"photo": Path(png)})
@@ -225,6 +229,8 @@ def telegram_foto_url(url, metin):
     """İnternetteki bir görseli (ör. marketin resmi afişi) Telegram'a gönderir; olmazsa dosya olarak gönderir."""
     if deneme_modu():
         print("[DENEME] telegram:", str(url)[:90].replace("\n", " ")); return
+    if sessiz_saat():
+        print("[SESSİZ SAAT] gönderilmedi:", str(url)[:90].replace("\n", " ")); return
 
     token = ayar("TELEGRAM_BOT_TOKEN")
     for chat in ayar("TELEGRAM_CHAT_ID").split(","):
@@ -243,6 +249,8 @@ def telegram_album_url(urller, metin):
     """İnternetteki görselleri (ör. BİM afişleri) tek albüm olarak gönderir; açıklama ilk görselde."""
     if deneme_modu():
         print("[DENEME] telegram:", str(urller)[:90].replace("\n", " ")); return
+    if sessiz_saat():
+        print("[SESSİZ SAAT] gönderilmedi:", str(urller)[:90].replace("\n", " ")); return
 
     token = ayar("TELEGRAM_BOT_TOKEN")
     medya = [{"type": "photo", "media": u} for u in urller[:10]]

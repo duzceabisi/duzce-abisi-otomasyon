@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from gonder import sessiz_saat
 from topla import topla
 import vefat
 
@@ -100,7 +101,7 @@ def main():
     subprocess.run([sys.executable, str(KOK / "ciz.py"), str(veri)], check=True)
     if any((KOK / "cikti" / ad).glob("*.png")):
         subprocess.run([sys.executable, str(KOK / "gonder.py"), str(KOK / "cikti" / ad), aciklama], check=True)
-        if d.get("vefat") and not onizleme:
+        if d.get("vefat") and not onizleme and not sessiz_saat():  # sessiz saatte gitmeyen vefatlar sonraki pakete kalır
             vefat.kaydet(d["vefat"])  # yalnızca gönderim başarılıysa: gönderilemeyen bir sonraki pakete kalır
     else:
         from haber_takip import telegram

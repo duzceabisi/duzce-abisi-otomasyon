@@ -6,7 +6,9 @@ Ayarlar:   TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID (virgülle ayrılmış) ortam
            değişkenlerinden, yoksa .env dosyasından okunur.
 """
 import json, os, sys, urllib.request, uuid
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 KOK = Path(__file__).resolve().parent
 
@@ -27,6 +29,16 @@ def deneme_modu():
     return os.environ.get("DENEME") == "1"
 
 
+SESSIZ = (2, 8)  # 02:00–08:00 (Türkiye saati) arası otomatik paylaşım gönderilmez; bildir komutu bundan etkilenmez
+
+
+def sessiz_saat():
+    """Sessiz saatlerdeyse True. SESSIZ_YOK=1 (GitHub'da elle başlatılan çalışmalar) bu kısıtı kaldırır."""
+    if os.environ.get("SESSIZ_YOK") == "1":
+        return False
+    return SESSIZ[0] <= datetime.now(ZoneInfo("Europe/Istanbul")).hour < SESSIZ[1]
+
+
 def cok_parcali(alanlar, dosyalar):
     sinir = uuid.uuid4().hex
     govde = b""
@@ -39,6 +51,9 @@ def cok_parcali(alanlar, dosyalar):
 
 
 def gonder(klasor, aciklama):
+    if sessiz_saat() and not deneme_modu():
+        print(f"[SESSİZ SAAT] gönderilmedi: {klasor}")
+        return
     token = ayar("TELEGRAM_BOT_TOKEN")
     pngler = sorted(Path(klasor).glob("*.png"))
     if not pngler:

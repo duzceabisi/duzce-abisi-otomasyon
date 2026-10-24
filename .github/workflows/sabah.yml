@@ -54,6 +54,7 @@ jobs:
           TZ: Europe/Istanbul
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SESSIZ_YOK: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}   # elle başlatılan çalışma sessiz saatte de gönderir
         run: python calistir.py "${{ steps.mod.outputs.mod }}"
       - name: Hafızayı kaydet
         if: always()
