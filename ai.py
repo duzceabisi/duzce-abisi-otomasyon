@@ -16,7 +16,9 @@ MODELLER = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-l
 OZET_TALIMAT = (
     "EN ÖNEMLİ KURAL: Özetteki her bilgi verilen başlıkta, açıklamada ya da metinde AÇIKÇA yazmalı. Yazmayan hiçbir şeyi "
     "ekleme: sebep, ihbar, ekiplerin gelişi, hastaneye kaldırılma, hasar, soruşturma, 'belirlenemeyen neden' gibi ayrıntılar "
-    "metinde yoksa yazma. Bilgi azsa özet kısa olur; bu doğrudur. "
+    "metinde yoksa yazma. Bilgi azsa özet kısa olur; bu doğrudur. Bir bilginin eksik olduğunu da ASLA yazma: 'metinde bilgi "
+    "bulunmuyor', 'detaylar paylaşılmadı', 'henüz bilinmeyen bir nedenle', 'ayrıntılar belli değil' gibi cümleler kurma; "
+    "bilinmeyen konuyu hiç anma. Okur 'metin' diye bir şey görmez, sen doğrudan haberi yazıyorsun. "
     "Düzce'nin yerel haber ve hizmet sayfası 'Düzce Abisi' için haber yazıyorsun. Sana bir haberin başlığı ve varsa haber "
     "metni verilecek. Okuyan kişi haberi başka yere bakmadan tam anlamalı. Metin yeterliyse özet 3-4 cümle olsun; metin "
     "kısaysa 1-2 cümle yeter, uzatmak için cümle ekleme. Metinde varsa şunları "
@@ -28,6 +30,8 @@ OZET_TALIMAT = (
     "cümlenle yaz. Abartısız, sade Türkçe; büyük harfle bağırma, ünlem kullanma. JSON döndür: "
     "{\"baslik\": en fazla 60 karakter, yer adını içersin, doğru ve dikkat çekici; \"ozet\": 3-4 cümle; "
     "\"kisa\": özetin karta sığacak en fazla 170 karakterlik hali (en önemli ayrıntılar: ne, nerede, sonuç); "
+    "\"metin\": haber sitesinde yayımlanacak haber metni; metin yeterliyse 2-4 paragraf (paragraflar arasında boş satır), "
+    "kısaysa özetle aynı olabilir; aynı kural geçerli: yalnızca verilen bilgiler, kopya cümle yok, uydurma ayrıntı yok; "
     "\"yer\": ilçe ve varsa mahalle/köy (ör. 'Gümüşova, Dededüzü köyü'), yoksa boş metin; "
     "\"duzce\": haber Düzce'de (ilçe, köy, mahalle dahil) geçen bir olay ya da Düzce'yi doğrudan ilgilendiren bir konuysa "
     "true; başka bir ildeki olay ya da Düzce'yle ilgisi olmayan genel/ulusal haber (dünya, magazin, ulusal spor, genel "
@@ -72,7 +76,8 @@ def ozetle(baslik, aciklama="", metin=""):
     if not isinstance(s, dict) or not s.get("baslik"):
         return None
     return {"baslik": str(s["baslik"])[:75], "ozet": str(s.get("ozet", ""))[:700], "kisa": str(s.get("kisa", ""))[:220],
-            "yer": str(s.get("yer", ""))[:60], "duzce": s.get("duzce", True) is not False, "sahne": str(s.get("sahne", ""))[:400]}
+            "yer": str(s.get("yer", ""))[:60], "duzce": s.get("duzce", True) is not False, "sahne": str(s.get("sahne", ""))[:400],
+            "metin": str(s.get("metin", ""))[:4000]}
 
 
 AYNI_TALIMAT = (

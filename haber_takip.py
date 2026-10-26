@@ -275,7 +275,7 @@ def gonder_haber(g, simdi, kaydet=True):
     ust = sinif["etiket"] + ("  ·  🔴 ÖNEMLİ" if sinif["onemli"] else "")
     kaynaklar = "\n".join(f'📰 <a href="{html.escape(h["link"])}">{html.escape(h["site"])}</a>' for h in g["haberler"])
     ozet, baslik, yer = g.get("ozet", ""), ilk["baslik"], ""
-    kart_ozet, sahne = ozet, ""
+    kart_ozet, sahne, uzun = ozet, "", ""
     if not ozet and (sinif["onemli"] or _ai_sayac["n"] < AI_SINIRI):  # kendi cümlelerimizle (ücretsiz Gemini)
         if not sinif["onemli"]:
             _ai_sayac["n"] += 1
@@ -290,6 +290,17 @@ def gonder_haber(g, simdi, kaydet=True):
             baslik, ozet, yer = y["baslik"], y["ozet"], y["yer"]
             kart_ozet = y.get("kisa") or ozet
             sahne = y.get("sahne", "")
+            uzun = y.get("metin", "")
+
+    def siteye(foto=None):  # haber.duzceabisi.com; site kapalıysa ya da ayar yoksa sessizce geçer
+        import haber_sitesi
+        aciklama = next((h.get("aciklama") for h in g["haberler"] if h.get("aciklama")), "")
+        haber_sitesi.haber(baslik, sinif["kod"], ilk["zaman"] or simdi,
+                           [{"site": h["site"], "link": h["link"]} for h in g["haberler"]],
+                           ozet=ozet, metin=uzun, onemli=sinif["onemli"], yer=yer,
+                           kaynak_baslik=ilk["baslik"] if baslik != ilk["baslik"] else re.sub(r"<[^>]+>", "", aciklama)[:300],
+                           foto=foto)
+
     metin = (f"{ust}\n<b>{html.escape(baslik)}</b>\n" + (f"{html.escape(ozet)}\n" if ozet else "") + f"🕒 {saat}"
              + (f" · 📍 {html.escape(yer)}" if yer else "") + f"\n{kaynaklar}"
              + (f"\n<i>Kaynak başlığı: {html.escape(ilk['baslik'])}</i>" if baslik != ilk["baslik"] else ""))
@@ -307,10 +318,12 @@ def gonder_haber(g, simdi, kaydet=True):
             png = ciz_kart({"kategori": sinif["kod"] if sinif["kod"] in KATEGORI else "genel", "baslik": baslik,
                             "ozet": kart_ozet, "yer": yer, "saat": saat, "foto": str(foto) if foto else ""},
                            KOK / "cikti" / "kartlar" / "son.png", hikaye=True)  # Instagram hikâyesi boyutu
+            siteye(foto)
             telegram_foto(png, metin)
             return True
         except Exception as hata:
             print(f"kart çizilemedi ({deneme + 1}. deneme):", hata, file=sys.stderr)
+    siteye()  # aynı haber ikinci kez gelirse site bağlantıdan tanır, çift kayıt olmaz
     telegram(metin)  # iki denemede de kart çizilemezse haber kaybolmasın
     return True
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Düzce Abisi yerel sunucu döngüsü: bilgisayar açık kaldığı sürece her şeyi zamanında çalıştırır.
 
-  her 5 dk   haber_takip.py, is_ilanlari.py, deprem.py, zamanli.py (burç, market, tarihte, özetler...)
+  her 5 dk   haber_takip.py, is_ilanlari.py, deprem.py, zamanli.py (burç, market, tarihte, özetler...), site_guncelle.py
   06:30      calistir.py gunaydin      09:30  calistir.py piyasa
   18:00      calistir.py eczane        21:00  calistir.py yarin
   saatte bir git pull (GitHub'daki düzeltmeler kendiliğinden gelir)
@@ -25,7 +25,7 @@ os.environ.setdefault("PYTHONUTF8", "1")         # Windows: Türkçe karakterli 
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 PENCERESIZ = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 TARAMA_ARALIGI = 300  # saniye
-TARAMA = ["haber_takip.py", "is_ilanlari.py", "deprem.py", "zamanli.py"]
+TARAMA = ["haber_takip.py", "is_ilanlari.py", "deprem.py", "zamanli.py", "site_guncelle.py"]  # son: haber.duzceabisi.com
 GUNLUK = [("gunaydin", 6, 30), ("piyasa", 9, 30), ("eczane", 18, 0), ("yarin", 21, 0)]
 
 
