@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Günlük paylaşımlar için ek veri kaynakları.
 
-  namaz()          Diyanet: Düzce namaz vakitleri
+  namaz()          Diyanet (yedek: Aladhan, Diyanet yöntemi): Düzce namaz vakitleri
   tarihte_bugun()  Vikipedi: bugünün tarihî olayları ve özel günleri
   depremler()      Kandilli Rasathanesi: son depremler (Düzce ve çevresi süzülür deprem.py'de)
 """
@@ -21,6 +21,26 @@ def getir(url, ua=UA):
 
 
 def namaz():
+    """Önce Diyanet; iki denemede de olmazsa Aladhan (Diyanet hesap yöntemi, en fazla ~1 dk fark)."""
+    for deneme in range(2):
+        try:
+            return namaz_diyanet()
+        except Exception as hata:
+            son_hata = hata
+    try:
+        return namaz_aladhan()
+    except Exception:
+        raise son_hata
+
+
+def namaz_aladhan():
+    bugun = datetime.now(TZ).strftime("%d-%m-%Y")
+    v = json.loads(getir(f"https://api.aladhan.com/v1/timings/{bugun}?latitude=40.8438&longitude=31.1565&method=13"))["data"]["timings"]
+    return [[ad, v[k][:5]] for ad, k in [("İmsak", "Fajr"), ("Güneş", "Sunrise"), ("Öğle", "Dhuhr"),
+                                         ("İkindi", "Asr"), ("Akşam", "Maghrib"), ("Yatsı", "Isha")]]
+
+
+def namaz_diyanet():
     # 9414 = Düzce merkez (9378 Osmancık'tır, karıştırma)
     s = getir("https://namazvakitleri.diyanet.gov.tr/tr-TR/9414/duzce-namaz-vakitleri").decode("utf-8", "replace")
     vakit = {html.unescape(a).strip(): b.strip() for a, b in re.findall(
