@@ -71,7 +71,8 @@ def duzce_disi(h):
     return not DUZCE.search(t) and bool(BASKA_IL.search(t))
 
 
-HABER_DEGIL = re.compile(r"ihale|alım işi|yapım işi|satış ilanı|kiralama ilanı", re.I)  # ilanlar haber değil
+HABER_DEGIL = re.compile(r"ihale|alım işi|yapım işi|satış ilanı|kiralama ilanı"  # ilanlar haber değil
+                         r"|gazeteyi okumak için|sayısı yayımlandı|sayısı çıktı|e-gazete|bugünkü sayımız", re.I)  # gazete duyuruları da
 DOLGU = {"ve", "ile", "de", "da", "bir", "bu", "için", "olan", "oldu", "düzce", "düzcede", "düzceli", "sonra", "son", "dakika"}
 
 
@@ -285,6 +286,9 @@ def gonder_haber(g, simdi, kaydet=True):
         y = ozetle(ilk["baslik"], next((h.get("aciklama") for h in g["haberler"] if h.get("aciklama")), ""), metin_)
         if y and not y["duzce"]:  # yapay zekâ tam metni okudu: Düzce'yle ilgisi yok
             print("Düzce dışı, gönderilmedi:", ilk["baslik"])
+            return False
+        if y and HABER_DEGIL.search(y["baslik"].replace("İ", "i").replace("I", "ı")):  # tam metin okununca ihale/ilan çıktı
+            print("haber değil (ilan/ihale), gönderilmedi:", y["baslik"])
             return False
         if y:
             baslik, ozet, yer = y["baslik"], y["ozet"], y["yer"]
